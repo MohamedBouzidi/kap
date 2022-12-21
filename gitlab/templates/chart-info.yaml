@@ -1,0 +1,16 @@
+---
+# Source: gitlab/templates/chart-info.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: gitlab-gitlab-chart-info
+  namespace: gitlab
+  labels:
+    app: gitlab
+    chart: gitlab-6.6.2
+    release: gitlab
+    heritage: Helm
+    
+data:
+  gitlabVersion: "15.6.2"
+  gitlabChartVersion: "6.6.2"

@@ -1,0 +1,19 @@
+---
+# Source: gitlab/charts/prometheus/templates/server/pvc.yaml
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  labels:
+    component: "server"
+    app: prometheus
+    release: gitlab
+    chart: prometheus-15.0.4
+    heritage: Helm
+  name: gitlab-prometheus-server
+  namespace: gitlab
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: "8Gi"

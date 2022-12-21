@@ -1,0 +1,20 @@
+---
+# Source: gitlab/charts/minio/templates/minio_pvc.yaml
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: gitlab-minio
+  namespace: gitlab
+  labels:
+    app: minio
+    chart: minio-0.4.3
+    release: gitlab
+    heritage: Helm
+    
+spec:
+  accessModes:
+    - "ReadWriteOnce"
+  resources:
+    requests:
+      storage: "10Gi"
+  selector:

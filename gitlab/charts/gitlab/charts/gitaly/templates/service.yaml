@@ -1,0 +1,31 @@
+---
+# Source: gitlab/charts/gitlab/charts/gitaly/templates/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: gitlab-gitaly
+  namespace: gitlab
+  labels:
+    app: gitaly
+    chart: gitaly-6.6.2
+    release: gitlab
+    heritage: Helm
+    
+    
+  annotations:
+    
+spec:
+  type: ClusterIP
+  clusterIP: "None"
+  ports:
+    - port: 8075
+      # This port is NOT prefixed with `grpc` due to
+      # https://gitlab.com/gitlab-org/charts/gitlab/-/issues/3822
+      name: gitaly
+      targetPort: grpc-gitaly
+    - port: 9236
+      name: http-metrics
+      targetPort: http-metrics
+  selector:
+    app: gitaly
+    release: gitlab

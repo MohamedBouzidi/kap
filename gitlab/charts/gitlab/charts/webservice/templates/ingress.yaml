@@ -1,0 +1,40 @@
+---
+# Source: gitlab/charts/gitlab/charts/webservice/templates/ingress.yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: gitlab-webservice-default
+  namespace: gitlab
+  labels:
+    app: webservice
+    chart: webservice-6.6.2
+    release: gitlab
+    heritage: Helm
+    gitlab.com/webservice-name: default
+    
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    kubernetes.io/ingress.provider: "nginx"
+    nginx.ingress.kubernetes.io/proxy-body-size: "512m"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "600"
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: "15"
+    cert-manager.io/issuer: "gitlab-issuer"
+    cert-manager.io/common-name: "gitlab.dev.local"
+    nginx.ingress.kubernetes.io/service-upstream: "true"
+spec:
+  
+  rules:
+    - host: gitlab.dev.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: gitlab-webservice-default
+                port:
+                  number: 8181
+  tls:
+    - hosts:
+      - gitlab.dev.local
+      secretName: gitlab-gitlab-tls

@@ -1,0 +1,21 @@
+---
+# Source: gitlab/charts/gitlab/charts/sidekiq/templates/pdb.yaml
+apiVersion: policy/v1beta1
+kind: PodDisruptionBudget
+metadata:
+  name: gitlab-sidekiq-all-in-1-v1
+  namespace: gitlab
+  labels:
+    app: sidekiq
+    chart: sidekiq-6.6.2
+    release: gitlab
+    heritage: Helm
+    
+spec:
+  maxUnavailable: 1
+  selector:
+    matchLabels:
+      app: sidekiq
+      release: gitlab
+      
+      queue-pod-name: all-in-1

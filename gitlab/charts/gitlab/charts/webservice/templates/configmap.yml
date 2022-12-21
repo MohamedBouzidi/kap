@@ -1,0 +1,388 @@
+---
+# Source: gitlab/charts/gitlab/charts/webservice/templates/configmap.yml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: gitlab-webservice
+  namespace: gitlab
+  labels:
+    app: webservice
+    chart: webservice-6.6.2
+    release: gitlab
+    heritage: Helm
+    
+data:
+  installation_type: |
+    gitlab-helm-chart
+  database.yml.erb: |
+    
+    production:
+      main:
+        adapter: postgresql
+        encoding: unicode
+        database: gitlabhq_production
+        username: gitlab
+        password: <%= File.read('/etc/gitlab/postgres/psql-password-main').strip.to_json %>
+        host: "gitlab-postgresql.gitlab.svc"
+        port: 5432
+        connect_timeout: 
+        keepalives: 
+        keepalives_idle: 
+        keepalives_interval: 
+        keepalives_count: 
+        tcp_user_timeout: 
+        application_name: 
+        prepared_statements: false
+        database_tasks: true
+        
+        
+  krb5.conf: |
+    
+  smtp_settings.rb: |
+    
+  resque.yml.erb: |
+    production:
+      url: redis://:<%= ERB::Util::url_encode(File.read("/etc/gitlab/redis/redis-password").strip) %>@gitlab-redis-master.gitlab.svc:6379
+      
+      id:
+  
+  
+  
+  cable.yml.erb: |
+    production:
+      url: redis://:<%= ERB::Util::url_encode(File.read("/etc/gitlab/redis/redis-password").strip) %>@gitlab-redis-master.gitlab.svc:6379
+      
+      id:
+      adapter: redis
+  
+  
+  
+  gitlab.yml.erb: |
+    production: &base
+      gitlab:
+        host: gitlab.dev.local
+        https: true
+        max_request_duration_seconds: 57
+        impersonation_enabled: 
+        application_settings_cache_seconds: 60
+        usage_ping_enabled: true
+        seat_link_enabled: true
+        default_can_create_group: true
+        username_changing_enabled: true
+        issue_closing_pattern: 
+        default_theme: 
+        default_projects_features:
+          issues: true
+          merge_requests: true
+          wiki: true
+          snippets: true
+          builds: true
+          container_registry: true
+        webhook_timeout: 
+        trusted_proxies:
+        time_zone: "UTC"        
+        email_from: "gitlab@dev.local"
+        email_display_name: "GitLab"
+        email_reply_to: "noreply@dev.local"
+        email_subject_suffix: ""
+      
+      gravatar:
+        plain_url: 
+        ssl_url: 
+      extra:
+        
+        
+        
+        
+        
+        
+      artifacts:
+        enabled: true
+        object_store:
+          enabled: true
+          remote_directory: gitlab-artifacts
+          proxy_download: true
+          connection:
+            provider: AWS
+            region: us-east-1
+            host: minio.dev.local
+            endpoint: http://gitlab-minio-svc.gitlab.svc:9000
+            path_style: true
+            aws_access_key_id: <%= File.read('/etc/gitlab/minio/accesskey').strip.to_json %>
+            aws_secret_access_key: <%= File.read('/etc/gitlab/minio/secretkey').strip.to_json %>
+      lfs:
+        enabled: true
+        object_store:
+          enabled: true
+          remote_directory: git-lfs
+          proxy_download: true
+          connection:
+            provider: AWS
+            region: us-east-1
+            host: minio.dev.local
+            endpoint: http://gitlab-minio-svc.gitlab.svc:9000
+            path_style: true
+            aws_access_key_id: <%= File.read('/etc/gitlab/minio/accesskey').strip.to_json %>
+            aws_secret_access_key: <%= File.read('/etc/gitlab/minio/secretkey').strip.to_json %>
+      uploads:
+        enabled: true
+        object_store:
+          enabled: true
+          remote_directory: gitlab-uploads
+          proxy_download: true
+          connection:
+            provider: AWS
+            region: us-east-1
+            host: minio.dev.local
+            endpoint: http://gitlab-minio-svc.gitlab.svc:9000
+            path_style: true
+            aws_access_key_id: <%= File.read('/etc/gitlab/minio/accesskey').strip.to_json %>
+            aws_secret_access_key: <%= File.read('/etc/gitlab/minio/secretkey').strip.to_json %>
+      packages:
+        enabled: true
+        object_store:
+          enabled: true
+          remote_directory: gitlab-packages
+          proxy_download: true
+          connection:
+            provider: AWS
+            region: us-east-1
+            host: minio.dev.local
+            endpoint: http://gitlab-minio-svc.gitlab.svc:9000
+            path_style: true
+            aws_access_key_id: <%= File.read('/etc/gitlab/minio/accesskey').strip.to_json %>
+            aws_secret_access_key: <%= File.read('/etc/gitlab/minio/secretkey').strip.to_json %>
+      external_diffs:
+        enabled: false
+        when: 
+        object_store:
+          enabled: false
+          remote_directory: gitlab-mr-diffs
+          proxy_download: true
+      terraform_state:
+        enabled: false
+        object_store:
+          enabled: false
+          remote_directory: gitlab-terraform-state
+          proxy_download: true
+      ci_secure_files:
+        enabled: false
+        object_store:
+          enabled: false
+          remote_directory: gitlab-ci-secure-files
+          proxy_download: true
+      dependency_proxy:
+        enabled: false
+        object_store:
+          enabled: false
+          remote_directory: gitlab-dependency-proxy
+          proxy_download: true
+      
+      sentry:
+        enabled: false
+        dsn: 
+        clientside_dsn: 
+        environment: 
+      gitlab_docs:
+        enabled: false
+        host: ""
+      
+      sidekiq:
+      pages:
+        enabled: false
+        access_control: false
+        artifacts_server: true
+        path: /srv/gitlab/shared/pages
+        host: pages.dev.local
+        port: 443
+        https: true
+        secret_file: /etc/gitlab/pages/secret
+        external_http: false
+        external_https: false
+        object_store:
+          enabled: true
+          remote_directory: gitlab-pages
+          connection:
+            provider: AWS
+            region: us-east-1
+            host: minio.dev.local
+            endpoint: http://gitlab-minio-svc.gitlab.svc:9000
+            path_style: true
+            aws_access_key_id: <%= File.read('/etc/gitlab/minio/accesskey').strip.to_json %>
+            aws_secret_access_key: <%= File.read('/etc/gitlab/minio/secretkey').strip.to_json %>
+        local_store:
+          enabled: false
+          path: 
+      mattermost:
+        enabled: false
+      gitlab_ci:
+      ldap:
+        enabled: false
+      
+      omniauth:
+        enabled: false
+        sync_profile_from_provider: []
+        sync_profile_attributes: ["email"]
+        allow_single_sign_on: ["saml"]
+        block_auto_created_users: true
+        auto_link_ldap_user: false
+        auto_link_saml_user: false
+        external_providers: []
+      kerberos:
+        enabled: false
+        keytab: /etc/krb5.keytab
+        use_dedicated_port: false
+        port: 8443
+        https: true
+        simple_ldap_linking_allowed_realms: []
+      shared:
+      gitaly:
+        client_path: /home/git/gitaly/bin
+        token: <%= File.read('/etc/gitlab/gitaly/gitaly_token').strip.to_json %>
+      repositories:
+        storages: # You must have at least a `default` storage path.
+          default:
+            path: /var/opt/gitlab/repo
+            gitaly_address: tcp://gitlab-gitaly-0.gitlab-gitaly.gitlab.svc:8075
+          
+      backup:
+        path: "tmp/backups"   # Relative paths are relative to Rails.root (default: tmp/backups/)
+      gitlab_kas:
+        enabled: true
+        secret_file: /etc/gitlab/kas/.gitlab_kas_secret
+        external_url: "wss://kas.dev.local"
+        internal_url: "grpc://gitlab-kas.gitlab.svc:8153"
+      gitlab_shell:
+        path: /home/git/gitlab-shell/
+        hooks_path: /home/git/gitlab-shell/hooks/
+        upload_pack: true
+        receive_pack: true
+        ssh_port: 22
+        secret_file: /etc/gitlab/shell/.gitlab_shell_secret
+      workhorse:
+        secret_file: /etc/gitlab/gitlab-workhorse/secret
+      git:
+        bin_path: /usr/bin/git
+      webpack:
+      monitoring:
+        ip_whitelist:
+          - 0.0.0.0/0
+        web_exporter:
+          enabled: true
+          address: 0.0.0.0
+          port: 8083
+        sidekiq_exporter:
+      shutdown:
+        blackout_seconds: <%= ENV["SHUTDOWN_BLACKOUT_SECONDS"] %>
+      rack_attack:
+        git_basic_auth:
+      ## Registry Integration
+      registry:
+        enabled: true
+        host: registry.dev.local
+        api_url: http://gitlab-registry.gitlab.svc:5000
+        key: /etc/gitlab/registry/gitlab-registry.key
+        issuer: gitlab-issuer
+        notification_secret: <%= YAML.load_file("/etc/gitlab/registry/notificationSecret").flatten.first %>
+      smartcard:
+        enabled: false
+        ca_file: '/etc/gitlab/rails-secrets/smartcard-ca.crt'
+        client_certificate_required_host: smartcard.dev.local
+        client_certificate_required_port: 443
+        san_extensions: false
+        required_for_git_access: false
+  configure: |
+    # BEGIN gitlab.scripts.configure.secrets
+    set -e
+    config_dir="/init-config"
+    secret_dir="/init-secrets"
+    # required
+    for secret in shell gitaly registry rails-secrets gitlab-workhorse ; do
+      mkdir -p "${secret_dir}/${secret}"
+      cp -v -r -L "${config_dir}/${secret}/." "${secret_dir}/${secret}/"
+    done
+    # optional
+    for secret in redis minio objectstorage postgres ldap omniauth smtp kas pages oauth-secrets mailroom gitlab-exporter ; do
+      if [ -e "${config_dir}/${secret}" ]; then
+        mkdir -p "${secret_dir}/${secret}"
+        cp -v -r -L "${config_dir}/${secret}/." "${secret_dir}/${secret}/"
+      fi
+    done
+    # END gitlab.scripts.configure.secrets
+---
+# Source: gitlab/charts/gitlab/charts/webservice/templates/configmap.yml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: gitlab-workhorse-default
+  namespace: gitlab
+  labels:
+    app: webservice
+    chart: webservice-6.6.2
+    release: gitlab
+    heritage: Helm
+    
+data:
+  installation_type: |
+    gitlab-helm-chart
+  workhorse-config.toml.tpl: |
+    shutdown_timeout = "61s"
+    [redis]
+    URL = "redis://gitlab-redis-master.gitlab.svc:6379"
+    Password = {% file.Read "/etc/gitlab/redis/redis-password" | strings.TrimSpace | data.ToJSON %}
+    {%- $supported_providers := slice "AWS" "AzureRM" -%}
+    {%- $provider := "" -%}
+    {%- $aws_access_key_id := "" -%}
+    {%- $aws_secret_access_key := "" -%}
+    {%- $azure_storage_account_name := "" -%}
+    {%- $azure_storage_access_key := "" -%}
+    {%- if file.Exists "/etc/gitlab/minio/accesskey" %}
+      {%- $provider = "AWS" -%}
+      {%- $aws_access_key_id = file.Read "/etc/gitlab/minio/accesskey" | strings.TrimSpace -%}
+      {%- $aws_secret_access_key = file.Read "/etc/gitlab/minio/secretkey" | strings.TrimSpace -%}
+    {%- end %}
+    {%- if file.Exists "/etc/gitlab/objectstorage/object_store" %}
+      {%- $connection := file.Read "/etc/gitlab/objectstorage/object_store" | strings.TrimSpace | data.YAML -%}
+      {%- $provider = $connection.provider -%}
+      {%- if has $connection "aws_access_key_id" -%}
+        {%- $aws_access_key_id = $connection.aws_access_key_id -%}
+        {%- $aws_secret_access_key = $connection.aws_secret_access_key -%}
+      {%- else if has $connection "azure_storage_account_name" -%}
+        {%- $azure_storage_account_name = $connection.azure_storage_account_name -%}
+        {%- $azure_storage_access_key = $connection.azure_storage_access_key -%}
+      {%- end -%}
+    {%- end %}
+    {%- if has $supported_providers $provider %}
+    [object_storage]
+    provider = "{% $provider %}"
+    {%-   if eq $provider "AWS" %}
+    # AWS / S3 object storage configuration.
+    [object_storage.s3]
+    # access/secret can be blank!
+    aws_access_key_id = {% $aws_access_key_id | strings.TrimSpace | data.ToJSON %}
+    aws_secret_access_key = {% $aws_secret_access_key | strings.TrimSpace | data.ToJSON %}
+    {%-   else if eq $provider "AzureRM" %}
+    # Azure Blob storage configuration.
+    [object_storage.azurerm]
+    azure_storage_account_name = {% $azure_storage_account_name | strings.TrimSpace | data.ToJSON %}
+    azure_storage_access_key = {% $azure_storage_access_key | strings.TrimSpace | data.ToJSON %}
+    {%-   end %}
+    {%- end %}
+    [image_resizer]
+    max_scaler_procs = 2
+    max_filesize = 250000
+    [[listeners]]
+    network = "tcp"
+    addr = "0.0.0.0:8181"
+  configure: |
+      set -e
+      mkdir -p /init-secrets-workhorse/gitlab-workhorse
+      cp -v -r -L /init-config/gitlab-workhorse/secret /init-secrets-workhorse/gitlab-workhorse/secret
+      mkdir -p /init-secrets-workhorse/redis
+      cp -v -r -L /init-config/redis/redis-password /init-secrets-workhorse/redis/
+      if [ -d /init-config/minio ]; then
+        mkdir -p /init-secrets-workhorse/minio
+        cp -v -r -L /init-config/minio/* /init-secrets-workhorse/minio/
+      fi
+
+# Leave this here - This line denotes end of block to the parser.

@@ -1,0 +1,177 @@
+---
+# Source: gitlab/charts/gitlab/charts/gitlab-shell/templates/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gitlab-gitlab-shell
+  namespace: gitlab
+  labels:
+    app: gitlab-shell
+    chart: gitlab-shell-6.6.2
+    release: gitlab
+    heritage: Helm
+    
+  annotations:
+    
+spec:
+  selector:
+    matchLabels:
+      app: gitlab-shell
+      release: gitlab
+      
+  template:
+    metadata:
+      labels:
+        app: gitlab-shell
+        chart: gitlab-shell-6.6.2
+        release: gitlab
+        heritage: Helm
+        
+        
+      annotations:
+        checksum/config: 90ed61598783408d2bc496e87825255ba91590d8c4546406744537b886064772
+        checksum/config-sshd: af43517e5e80d6c0d2d755ffb324a82ae3ee9c034bde242fbe8471e5477a3f2b
+        cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
+    spec:
+      
+      initContainers:
+        
+        - name: certificates
+          image: "registry.gitlab.com/gitlab-org/build/cng/alpine-certificates:20191127-r2@sha256:367d437d024d7647432d67fb2442e3e5723af5930bad77d3535f4f8f4f8630d9"  
+          env:
+          
+          
+          volumeMounts:
+          - name: etc-ssl-certs
+            mountPath: /etc/ssl/certs
+            readOnly: false
+          - name: etc-pki-ca-trust-extracted-pem
+            mountPath: /etc/pki/ca-trust/extracted/pem
+            readOnly: false
+          resources:
+            requests:
+              cpu: 50m
+        - name: configure
+          command: ['sh', '/config/configure']
+          image: "registry.gitlab.com/gitlab-org/cloud-native/mirror/images/busybox:latest"          
+          env:
+          
+          
+          volumeMounts:
+          
+          - name: shell-config
+            mountPath: /config
+            readOnly: true
+          - name: shell-init-secrets
+            mountPath: /init-config
+            readOnly: true
+          - name: shell-secrets
+            mountPath: /init-secrets
+            readOnly: false
+          resources:
+            requests:
+              cpu: 50m
+      securityContext:
+        runAsUser: 1000
+        fsGroup: 1000      
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 1
+            podAffinityTerm:
+              topologyKey: "kubernetes.io/hostname"
+              labelSelector:
+                matchLabels:
+                  app: gitlab-shell
+                  release: gitlab
+                  
+      automountServiceAccountToken: false
+      containers:
+        
+        - name: gitlab-shell
+          image: "registry.gitlab.com/gitlab-org/build/cng/gitlab-shell:v14.13.0"          
+          ports:
+            - containerPort: 2222
+              name: ssh
+          env:
+            - name: GITALY_FEATURE_DEFAULT_ON
+              value: "1"
+            - name: CONFIG_TEMPLATE_DIRECTORY
+              value: '/etc/gitlab-shell'
+            - name: CONFIG_DIRECTORY
+              value: '/srv/gitlab-shell'
+            - name: KEYS_DIRECTORY
+              value: '/etc/gitlab-secrets/ssh'
+            - name: SSH_DAEMON
+              value: "openssh"
+            
+            
+          volumeMounts:
+            - name: shell-config
+              mountPath: '/etc/gitlab-shell'
+            - name: shell-secrets
+              mountPath: '/etc/gitlab-secrets'
+              readOnly: true
+            - name: sshd-config
+              mountPath: /etc/ssh/sshd_config
+              subPath: sshd_config
+              readOnly: true
+            
+            - name: etc-ssl-certs
+              mountPath: /etc/ssl/certs/
+              readOnly: true
+            - name: etc-pki-ca-trust-extracted-pem
+              mountPath: /etc/pki/ca-trust/extracted/pem
+              readOnly: true
+          livenessProbe:
+            exec:
+              command:
+              - /scripts/healthcheck
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 3
+            successThreshold: 1
+            failureThreshold: 3
+          readinessProbe:
+            tcpSocket:
+              port: 2222
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 3
+            successThreshold: 1
+            failureThreshold: 2
+          resources:
+            requests:
+              cpu: 0
+              memory: 6M
+      terminationGracePeriodSeconds: 30
+      volumes:
+      
+      - name: shell-config
+        configMap:
+          name: gitlab-gitlab-shell
+      - name: sshd-config
+        configMap:
+          name: gitlab-gitlab-shell-sshd
+      - name: shell-init-secrets
+        projected:
+          defaultMode: 0440
+          sources:
+            - secret:
+                name: "gitlab-gitlab-shell-host-keys"
+            - secret:
+                name: "gitlab-gitlab-shell-secret"
+                items:
+                  - key: "secret"
+                    path: shell/.gitlab_shell_secret
+      # Actual config dirs that will be used in the container
+      - name: shell-secrets
+        emptyDir:
+          medium: "Memory"
+      
+      - name: etc-ssl-certs
+        emptyDir:
+          medium: "Memory"
+      - name: etc-pki-ca-trust-extracted-pem
+        emptyDir:
+          medium: "Memory"

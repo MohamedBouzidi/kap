@@ -1,0 +1,200 @@
+---
+# Source: gitlab/charts/gitlab/charts/gitlab-exporter/templates/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gitlab-gitlab-exporter
+  namespace: gitlab
+  labels:
+    app: gitlab-exporter
+    chart: gitlab-exporter-6.6.2
+    release: gitlab
+    heritage: Helm
+    
+  annotations:
+    
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: gitlab-exporter
+      release: gitlab
+      
+  template:
+    metadata:
+      labels:
+        app: gitlab-exporter
+        chart: gitlab-exporter-6.6.2
+        release: gitlab
+        heritage: Helm
+        
+        
+      annotations:
+        checksum/config: ddf3b69d1b6a1dae6b6467e0f0a239ec5200446e6c16ac23d4e6173f850fbd73
+        gitlab.com/prometheus_scrape: "true"
+        gitlab.com/prometheus_port: "9168"
+        gitlab.com/prometheus_path: /metrics
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9168"
+        prometheus.io/path: /metrics
+
+    spec:
+      securityContext:
+        runAsUser: 1000
+        fsGroup: 1000
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 1
+            podAffinityTerm:
+              topologyKey: "kubernetes.io/hostname"
+              labelSelector:
+                matchLabels:
+                  app: gitlab-exporter
+                  release: gitlab
+                  
+      automountServiceAccountToken: false
+      
+      initContainers:
+        
+        - name: certificates
+          image: "registry.gitlab.com/gitlab-org/build/cng/alpine-certificates:20191127-r2@sha256:367d437d024d7647432d67fb2442e3e5723af5930bad77d3535f4f8f4f8630d9"  
+          env:
+          
+          - name: MALLOC_CONF
+            value: "dirty_decay_ms:0,muzzy_decay_ms:0"
+          - name: RUBY_GC_HEAP_FREE_SLOTS_MAX_RATIO
+            value: "0.111"
+          - name: RUBY_GC_HEAP_FREE_SLOTS_MIN_RATIO
+            value: "0.055"
+          - name: RUBY_GC_HEAP_INIT_SLOTS
+            value: "80000"
+          
+          volumeMounts:
+          - name: etc-ssl-certs
+            mountPath: /etc/ssl/certs
+            readOnly: false
+          - name: etc-pki-ca-trust-extracted-pem
+            mountPath: /etc/pki/ca-trust/extracted/pem
+            readOnly: false
+          resources:
+            requests:
+              cpu: 50m
+        - name: configure
+          command: ['sh', '/config/configure']
+          image: "registry.gitlab.com/gitlab-org/cloud-native/mirror/images/busybox:latest"          
+          env:
+          
+          - name: MALLOC_CONF
+            value: "dirty_decay_ms:0,muzzy_decay_ms:0"
+          - name: RUBY_GC_HEAP_FREE_SLOTS_MAX_RATIO
+            value: "0.111"
+          - name: RUBY_GC_HEAP_FREE_SLOTS_MIN_RATIO
+            value: "0.055"
+          - name: RUBY_GC_HEAP_INIT_SLOTS
+            value: "80000"
+          
+          volumeMounts:
+          
+          
+          - name: gitlab-exporter-config
+            mountPath: /config
+            readOnly: true
+          - name: init-gitlab-exporter-secrets
+            mountPath: /init-config
+            readOnly: true
+          - name: gitlab-exporter-secrets
+            mountPath: /init-secrets
+            readOnly: false
+          resources:
+            requests:
+              cpu: 50m      
+      containers:
+        
+        - name: gitlab-exporter
+          image: "registry.gitlab.com/gitlab-org/build/cng/gitlab-exporter:11.18.2"          
+          env:
+            - name: CONFIG_TEMPLATE_DIRECTORY
+              value: '/var/opt/gitlab-exporter/templates'
+            - name: CONFIG_DIRECTORY
+              value: '/etc/gitlab-exporter'
+            
+            - name: MALLOC_CONF
+              value: "dirty_decay_ms:0,muzzy_decay_ms:0"
+            - name: RUBY_GC_HEAP_FREE_SLOTS_MAX_RATIO
+              value: "0.111"
+            - name: RUBY_GC_HEAP_FREE_SLOTS_MIN_RATIO
+              value: "0.055"
+            - name: RUBY_GC_HEAP_INIT_SLOTS
+              value: "80000"
+            
+          ports:
+          - containerPort: 9168
+            name: http-metrics
+          volumeMounts:
+            - name: gitlab-exporter-config
+              mountPath: /var/opt/gitlab-exporter/templates/gitlab-exporter.yml.erb
+              subPath: gitlab-exporter.yml.erb
+            - name: gitlab-exporter-secrets
+              mountPath: '/etc/gitlab'
+              readOnly: true
+            
+            - name: etc-ssl-certs
+              mountPath: /etc/ssl/certs/
+              readOnly: true
+            - name: etc-pki-ca-trust-extracted-pem
+              mountPath: /etc/pki/ca-trust/extracted/pem
+              readOnly: true
+          livenessProbe:
+            exec:
+              command:
+                - pgrep
+                - -f
+                - gitlab-exporter
+          readinessProbe:
+            exec:
+              command:
+                - pgrep
+                - -f
+                - gitlab-exporter
+          lifecycle:
+            preStop:
+              exec:
+                command: ["/bin/bash", "-c", "pkill -f 'gitlab-exporter'"]
+          resources:
+            requests:
+              cpu: 75m
+              memory: 100M
+      volumes:
+      
+      
+      - name: gitlab-exporter-config
+        configMap:
+          name: gitlab-gitlab-exporter
+      - name: init-gitlab-exporter-secrets
+        projected:
+          defaultMode: 0400
+          sources:
+          - secret:
+              name: "gitlab-postgresql-password"
+              items:
+                - key: "postgresql-password"
+                  path: postgres/psql-password-main
+          
+          - secret:
+              name: "gitlab-redis-secret"
+              items:
+                - key: "secret"
+                  path: redis/redis-password
+          
+
+      - name: gitlab-exporter-secrets
+        emptyDir:
+          medium: "Memory"
+      
+      - name: etc-ssl-certs
+        emptyDir:
+          medium: "Memory"
+      - name: etc-pki-ca-trust-extracted-pem
+        emptyDir:
+          medium: "Memory"

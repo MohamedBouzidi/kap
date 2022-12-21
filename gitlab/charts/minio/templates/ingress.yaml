@@ -1,0 +1,39 @@
+---
+# Source: gitlab/charts/minio/templates/ingress.yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: gitlab-minio
+  namespace: gitlab
+  labels:
+    app: minio
+    chart: minio-0.4.3
+    release: gitlab
+    heritage: Helm
+    
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    kubernetes.io/ingress.provider: "nginx"
+    nginx.ingress.kubernetes.io/proxy-body-size: "0"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "900"
+    nginx.ingress.kubernetes.io/proxy-request-buffering: "off"
+    nginx.ingress.kubernetes.io/proxy-buffering: "off"
+    cert-manager.io/issuer: "gitlab-issuer"
+    cert-manager.io/common-name: "minio.dev.local"
+spec:
+  
+  rules:
+    - host: minio.dev.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: gitlab-minio-svc
+                port:
+                  number: 9000
+  tls:
+    - hosts:
+      - minio.dev.local
+      secretName: gitlab-minio-tls

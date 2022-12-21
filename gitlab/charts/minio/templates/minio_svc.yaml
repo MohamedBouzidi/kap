@@ -1,0 +1,26 @@
+---
+# Source: gitlab/charts/minio/templates/minio_svc.yaml
+kind: Service
+apiVersion: v1
+metadata:
+  name: gitlab-minio-svc
+  namespace: gitlab
+  labels:
+    app: minio
+    chart: minio-0.4.3
+    release: gitlab
+    heritage: Helm
+    
+  annotations:
+    
+spec:
+  type: ClusterIP
+  selector:
+    app: minio
+    release: gitlab
+    component: app
+  ports:
+    - name: http
+      port: 9000
+      targetPort: 9000
+      protocol: TCP

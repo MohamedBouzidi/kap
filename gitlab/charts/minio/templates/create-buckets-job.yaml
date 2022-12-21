@@ -1,0 +1,54 @@
+---
+# Source: gitlab/charts/minio/templates/create-buckets-job.yaml
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: gitlab-minio-create-buckets-1
+  namespace: gitlab
+  labels:
+    app: minio
+    chart: minio-0.4.3
+    release: gitlab
+    heritage: Helm
+    
+spec:
+  activeDeadlineSeconds: 600
+  template:
+    metadata:
+      labels:
+        component: create-buckets
+        app: minio
+        chart: minio-0.4.3
+        release: gitlab
+        heritage: Helm
+        
+        
+
+    spec:
+      automountServiceAccountToken: false
+      restartPolicy: OnFailure
+      
+      
+      volumes:
+        - name: minio-configuration
+          projected:
+            sources:
+            - configMap:
+                name: gitlab-minio-config-cm
+            - secret:
+                name: "gitlab-minio-secret"      
+      containers:
+      - name: minio-mc
+        image: minio/mc:RELEASE.2018-07-13T00-53-22Z        
+        command: ["/bin/sh", "/config/initialize"]
+        env:
+          - name: MINIO_ENDPOINT
+            value: gitlab-minio-svc.gitlab.svc
+          - name: MINIO_PORT
+            value: "9000"
+        volumeMounts:
+          - name: minio-configuration
+            mountPath: /config
+        resources:
+          requests:
+            cpu: 50m

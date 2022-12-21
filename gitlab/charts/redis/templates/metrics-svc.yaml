@@ -1,0 +1,23 @@
+---
+# Source: gitlab/charts/redis/templates/metrics-svc.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: gitlab-redis-metrics
+  namespace: "gitlab"
+  labels:
+    app: redis
+    chart: redis-11.3.4
+    release: gitlab
+    heritage: Helm
+    app.kubernetes.io/component: "metrics"
+spec:
+  type: ClusterIP
+  
+  ports:
+    - name: metrics
+      port: 9121
+      targetPort: metrics
+  selector:
+    app: redis
+    release: gitlab

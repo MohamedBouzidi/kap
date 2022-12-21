@@ -1,0 +1,39 @@
+---
+# Source: gitlab/charts/gitlab/charts/webservice/templates/tests/test-runner.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: gitlab-webservice-test-runner-vplnv
+  namespace: gitlab
+  annotations:
+    "helm.sh/hook": test
+    "helm.sh/hook-delete-policy": hook-succeeded,hook-failed,before-hook-creation
+  labels:
+    app: webservice
+    chart: webservice-6.6.2
+    release: gitlab
+    heritage: Helm
+    
+spec:
+  containers:
+  - name: test-runner
+    image: registry.gitlab.com/gitlab-org/build/cng/gitlab-webservice-ee:v15.6.2
+    command: ['sh', '/tests/test_login']
+    volumeMounts:
+      - name: tests
+        mountPath: '/tests'
+      - name: root-password
+        readOnly: true
+        mountPath: /initial_root_password
+        subPath: initial_root_password
+  volumes:
+  - name: tests
+    configMap:
+      name: gitlab-webservice-tests
+  - name: root-password
+    secret:
+      secretName: "gitlab-gitlab-initial-root-password"
+      items:
+        - key: "password"
+          path: initial_root_password
+  restartPolicy: Never

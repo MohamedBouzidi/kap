@@ -1,0 +1,16 @@
+---
+# Source: gitlab/charts/gitlab-runner/templates/role.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: "Role"
+metadata:
+  name: gitlab-gitlab-runner
+  labels:
+    app: gitlab-gitlab-runner
+    chart: gitlab-runner-0.47.0
+    release: "gitlab"
+    heritage: "Helm"
+  namespace: "gitlab"
+rules:
+- apiGroups: [""]
+  resources: ["*"]
+  verbs: ["*"]

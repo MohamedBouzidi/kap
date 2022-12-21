@@ -1,0 +1,98 @@
+---
+# Source: gitlab/charts/minio/templates/minio_deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gitlab-minio
+  namespace: gitlab
+  labels:
+    app: minio
+    chart: minio-0.4.3
+    release: gitlab
+    heritage: Helm
+    
+  annotations:
+    
+spec:
+  selector:
+    matchLabels:
+      app: minio
+      release: "gitlab"
+      component: app
+  strategy: 
+    type: Recreate
+  template:
+    metadata:
+      name: gitlab-minio
+      labels:
+        component: app
+        app: minio
+        chart: minio-0.4.3
+        release: gitlab
+        heritage: Helm
+        
+        
+      annotations:
+    spec:
+      automountServiceAccountToken: false
+      
+      securityContext:
+        runAsUser: 1000
+        fsGroup: 1000
+      
+      volumes:
+        - name: podinfo
+          downwardAPI:
+            items:
+              - path: "labels"
+                fieldRef:
+                  fieldPath: metadata.labels
+        - name: export
+          persistentVolumeClaim:
+            claimName: gitlab-minio
+        - name: minio-configuration
+          projected:
+            sources:
+            - configMap:
+                name: gitlab-minio-config-cm
+            - secret:
+                name: "gitlab-minio-secret"
+        - name: minio-server-config
+          emptyDir:
+            medium: "Memory"
+      initContainers:
+        - name: configure
+          image: "registry.gitlab.com/gitlab-org/cloud-native/mirror/images/busybox:latest"          
+          command: ["sh", "/config/configure"]
+          volumeMounts:
+            - name: minio-configuration
+              mountPath: /config
+            - name: minio-server-config
+              mountPath: /minio
+          resources:
+            requests:
+              cpu: 50m      
+      containers:
+        - name: minio
+          image: minio/minio:RELEASE.2017-12-28T01-21-00Z          
+          args: ["-C", "/tmp/.minio", "--quiet", "server", "/export"]
+          volumeMounts:
+            - name: export
+              mountPath: /export
+            - name: minio-server-config
+              # this path altered from upstream, for use with `securityContext`/UID 1000
+              mountPath: "/tmp/.minio"
+            - name: podinfo
+              mountPath: /podinfo
+              readOnly: false
+          ports:
+            - name: service
+              containerPort: 9000
+          livenessProbe:
+            tcpSocket:
+              port: 9000
+            timeoutSeconds: 1
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi

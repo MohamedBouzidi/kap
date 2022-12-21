@@ -1,0 +1,26 @@
+---
+# Source: gitlab/charts/gitlab/charts/gitlab-exporter/templates/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: gitlab-gitlab-exporter
+  namespace: gitlab
+  labels:
+    app: gitlab-exporter
+    chart: gitlab-exporter-6.6.2
+    release: gitlab
+    heritage: Helm
+    
+    
+  annotations:
+    
+spec:
+  type: ClusterIP
+  ports:
+    - port: 9168
+      targetPort: http-metrics
+      protocol: TCP
+      name: http-metrics
+  selector:
+    app: gitlab-exporter
+    release: gitlab

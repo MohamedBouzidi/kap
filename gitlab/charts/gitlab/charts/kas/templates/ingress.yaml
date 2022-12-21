@@ -1,0 +1,44 @@
+---
+# Source: gitlab/charts/gitlab/charts/kas/templates/ingress.yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: gitlab-kas
+  namespace: gitlab
+  labels:
+    app: kas
+    chart: kas-6.6.2
+    release: gitlab
+    heritage: Helm
+    
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    kubernetes.io/ingress.provider: "nginx"
+    nginx.ingress.kubernetes.io/proxy-buffering: "off"
+    nginx.ingress.kubernetes.io/custom-http-errors: ""
+    cert-manager.io/issuer: "gitlab-issuer"
+    cert-manager.io/common-name: "kas.dev.local"
+spec:
+  
+  rules:
+    - host: kas.dev.local
+      http:
+        paths:
+          - path: "/"
+            pathType: Prefix
+            backend:
+              service:
+                name: gitlab-kas
+                port:
+                  number: 8150
+          - path: "/k8s-proxy/"
+            pathType: Prefix
+            backend:
+              service:
+                name: gitlab-kas
+                port:
+                  number: 8154
+  tls:
+    - hosts:
+      - kas.dev.local
+      secretName: gitlab-kas-tls

@@ -1,0 +1,22 @@
+---
+# Source: gitlab/charts/postgresql/templates/svc.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: gitlab-postgresql
+  labels:
+    app: postgresql
+    chart: postgresql-8.9.4
+    release: "gitlab"
+    heritage: "Helm"
+  annotations:
+spec:
+  type: ClusterIP
+  ports:
+    - name: tcp-postgresql
+      port: 5432
+      targetPort: tcp-postgresql
+  selector:
+    app: postgresql
+    release: "gitlab"
+    role: master

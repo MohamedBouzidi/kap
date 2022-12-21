@@ -1,0 +1,198 @@
+---
+# Source: gitlab/charts/gitlab/charts/gitaly/templates/statefulset.yml
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: gitlab-gitaly
+  namespace: gitlab
+  labels:
+    app: gitaly
+    chart: gitaly-6.6.2
+    release: gitlab
+    heritage: Helm
+    
+spec:
+  selector:
+    matchLabels:
+      app: gitaly
+      release: gitlab
+      
+  serviceName: gitlab-gitaly
+  replicas: 1
+  podManagementPolicy: Parallel
+  template:
+    metadata:
+      labels:
+        app: gitaly
+        chart: gitaly-6.6.2
+        release: gitlab
+        heritage: Helm
+        
+        
+      annotations:
+        checksum/config: e74e70fa8a77c8aea0b085ebcad027f1c258d2bfa6999927d674f37ff124e5da
+        gitlab.com/prometheus_scrape: "true"
+        gitlab.com/prometheus_port: "9236"
+        gitlab.com/prometheus_path: /metrics
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9236"
+        prometheus.io/path: /metrics
+    spec:
+      
+      terminationGracePeriodSeconds: 30
+      initContainers:
+        
+        - name: certificates
+          image: "registry.gitlab.com/gitlab-org/build/cng/alpine-certificates:20191127-r2@sha256:367d437d024d7647432d67fb2442e3e5723af5930bad77d3535f4f8f4f8630d9"  
+          env:
+          
+          
+          volumeMounts:
+          - name: etc-ssl-certs
+            mountPath: /etc/ssl/certs
+            readOnly: false
+          - name: etc-pki-ca-trust-extracted-pem
+            mountPath: /etc/pki/ca-trust/extracted/pem
+            readOnly: false
+          resources:
+            requests:
+              cpu: 50m
+        - name: configure
+          command: ['sh', '/config/configure']
+          image: "registry.gitlab.com/gitlab-org/cloud-native/mirror/images/busybox:latest"          
+          env:
+          
+          
+          volumeMounts:
+          
+          - name: gitaly-config
+            mountPath: /config
+            readOnly: true
+          - name: init-gitaly-secrets
+            mountPath: /init-config
+            readOnly: true
+          - name: gitaly-secrets
+            mountPath: /init-secrets
+            readOnly: false
+          resources:
+            requests:
+              cpu: 50m
+      securityContext:
+        runAsUser: 1000
+        fsGroup: 1000      
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 1
+            podAffinityTerm:
+              topologyKey: "kubernetes.io/hostname"
+              labelSelector:
+                matchLabels:
+                  app: gitaly
+                  release: gitlab
+                  
+      automountServiceAccountToken: false
+      containers:
+        
+        - name: gitaly
+          image: "registry.gitlab.com/gitlab-org/build/cng/gitaly:v15.6.2"          
+          ports:
+            - containerPort: 8075
+              name: grpc-gitaly
+            - containerPort: 9236
+              name: http-metrics
+          env:
+            - name: CONFIG_TEMPLATE_DIRECTORY
+              value: '/etc/gitaly/templates'
+            - name: CONFIG_DIRECTORY
+              value: '/etc/gitaly'
+            - name: GITALY_CONFIG_FILE
+              value: '/etc/gitaly/config.toml'
+            - name: SSL_CERT_DIR
+              value: '/etc/ssl/certs'
+            
+            
+            
+          volumeMounts:
+            
+            - name: etc-ssl-certs
+              mountPath: /etc/ssl/certs/
+              readOnly: true
+            - name: etc-pki-ca-trust-extracted-pem
+              mountPath: /etc/pki/ca-trust/extracted/pem
+              readOnly: true
+            - name: gitaly-config
+              mountPath: '/etc/gitaly/templates'
+            - name: gitaly-secrets
+              mountPath: '/etc/gitlab-secrets'
+              readOnly: true
+            - name: repo-data
+              mountPath: '/home/git/repositories'
+          livenessProbe:
+            exec:
+              command:
+              - /scripts/healthcheck
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 3
+            successThreshold: 1
+            failureThreshold: 3
+          readinessProbe:
+            exec:
+              command:
+              - /scripts/healthcheck
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 3
+            successThreshold: 1
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: 100m
+              memory: 200Mi
+      volumes:
+      
+      - name: gitaly-config
+        configMap:
+          name: gitlab-gitaly
+      - name: gitaly-secrets
+        emptyDir:
+          medium: "Memory"
+      - name: init-gitaly-secrets
+        projected:
+          defaultMode: 0440
+          sources:
+          - secret:
+              name: "gitlab-gitaly-secret"
+              items:
+                - key: "token"
+                  path: "gitaly_token"
+          - secret:
+              name: "gitlab-gitlab-shell-secret"
+              items:
+                - key: "secret"
+                  path: ".gitlab_shell_secret"
+      
+      - name: etc-ssl-certs
+        emptyDir:
+          medium: "Memory"
+      - name: etc-pki-ca-trust-extracted-pem
+        emptyDir:
+          medium: "Memory"
+      
+
+  
+  volumeClaimTemplates:
+    - metadata:
+        name: repo-data
+        labels:
+          app: gitaly
+          release: gitlab
+        annotations:
+      spec:
+        accessModes:
+          - "ReadWriteOnce"
+        resources:
+          requests:
+            storage: "50Gi"
+        selector:

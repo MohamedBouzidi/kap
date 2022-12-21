@@ -1,0 +1,25 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: app-traefik
+  namespace: traefik
+spec:
+  isCA: true
+  commonName: app.traefik.local
+  secretName: app-traefik-tls
+  privateKey:
+    algorithm: ECDSA
+    size: 256
+  issuerRef:
+    name: selfissuer
+    kind: ClusterIssuer
+    group: cert-manager.io
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: TLSStore
+metadata:
+  name: default
+  namespace: traefik
+spec:
+  defaultCertificate:
+    secretName: app-traefik-tls

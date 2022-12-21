@@ -1,0 +1,93 @@
+---
+# Source: gitlab/charts/gitlab/charts/migrations/templates/configmap.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: gitlab-migrations
+  namespace: gitlab
+  labels:
+    app: migrations
+    chart: migrations-6.6.2
+    release: gitlab
+    heritage: Helm
+    
+data:
+  pages_redirect_uri: https://projects.pages.dev.local/auth
+  installation_type: |
+    gitlab-helm-chart
+  database.yml.erb: |
+    
+    production:
+      main:
+        adapter: postgresql
+        encoding: unicode
+        database: gitlabhq_production
+        username: gitlab
+        password: <%= File.read('/etc/gitlab/postgres/psql-password-main').strip.to_json %>
+        host: "gitlab-postgresql.gitlab.svc"
+        port: 5432
+        connect_timeout: 
+        keepalives: 
+        keepalives_idle: 
+        keepalives_interval: 
+        keepalives_count: 
+        tcp_user_timeout: 
+        application_name: 
+        prepared_statements: false
+        database_tasks: true
+        
+        
+  resque.yml.erb: |
+    production:
+      url: redis://:<%= ERB::Util::url_encode(File.read("/etc/gitlab/redis/redis-password").strip) %>@gitlab-redis-master.gitlab.svc:6379
+      
+      id:
+  
+  
+  
+  cable.yml.erb: |
+    production:
+      url: redis://:<%= ERB::Util::url_encode(File.read("/etc/gitlab/redis/redis-password").strip) %>@gitlab-redis-master.gitlab.svc:6379
+      
+      id:
+      adapter: redis
+  
+  
+  
+  gitlab.yml.erb: |
+    production: &base
+      gitlab:
+        host: gitlab.dev.local
+      gitaly:
+        client_path: /home/git/gitaly/bin
+        token: <%= File.read('/etc/gitlab/gitaly/gitaly_token').strip.to_json %>
+      repositories:
+        storages: # You must have at least a `default` storage path.
+          default:
+            path: /var/opt/gitlab/repo
+            gitaly_address: tcp://gitlab-gitaly-0.gitlab-gitaly.gitlab.svc:8075
+          
+      
+      sidekiq:
+      
+  configure: |
+    # BEGIN gitlab.scripts.configure.secrets
+    set -e
+    config_dir="/init-config"
+    secret_dir="/init-secrets"
+    # required
+    for secret in rails-secrets migrations gitaly ; do
+      mkdir -p "${secret_dir}/${secret}"
+      cp -v -r -L "${config_dir}/${secret}/." "${secret_dir}/${secret}/"
+    done
+    # optional
+    for secret in redis minio objectstorage postgres ldap omniauth smtp kas pages oauth-secrets mailroom gitlab-exporter ; do
+      if [ -e "${config_dir}/${secret}" ]; then
+        mkdir -p "${secret_dir}/${secret}"
+        cp -v -r -L "${config_dir}/${secret}/." "${secret_dir}/${secret}/"
+      fi
+    done
+    # END gitlab.scripts.configure.secrets
+    
+    
+# Leave this here - This line denotes end of block to the parser.

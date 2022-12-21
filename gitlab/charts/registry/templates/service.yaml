@@ -1,0 +1,26 @@
+---
+# Source: gitlab/charts/registry/templates/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: gitlab-registry
+  namespace: gitlab
+  labels:
+    app: registry
+    chart: registry-0.7.0
+    release: gitlab
+    heritage: Helm
+    
+    
+  annotations:
+    
+spec:
+  type: ClusterIP
+  ports:
+  - port: 5000
+    targetPort: http
+    protocol: TCP
+    name: http-registry
+  selector:
+    app: registry
+    release: gitlab

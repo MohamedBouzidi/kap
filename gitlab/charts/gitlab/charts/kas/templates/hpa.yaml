@@ -1,0 +1,25 @@
+---
+# Source: gitlab/charts/gitlab/charts/kas/templates/hpa.yaml
+apiVersion: autoscaling/v2beta1
+kind: HorizontalPodAutoscaler
+metadata:
+  name: gitlab-kas
+  namespace: gitlab
+  labels:
+    app: kas
+    chart: kas-6.6.2
+    release: gitlab
+    heritage: Helm
+    
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: gitlab-kas
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        targetAverageValue: 100m

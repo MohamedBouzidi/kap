@@ -1,0 +1,53 @@
+---
+# Source: gitlab/charts/gitlab/charts/gitlab-shell/templates/configmap.yml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: gitlab-gitlab-shell
+  namespace: gitlab
+  labels:
+    app: gitlab-shell
+    chart: gitlab-shell-6.6.2
+    release: gitlab
+    heritage: Helm
+    
+data:
+  configure: |
+    # BEGIN gitlab.scripts.configure.secrets
+    set -e
+    config_dir="/init-config"
+    secret_dir="/init-secrets"
+    # required
+    for secret in shell ; do
+      mkdir -p "${secret_dir}/${secret}"
+      cp -v -r -L "${config_dir}/${secret}/." "${secret_dir}/${secret}/"
+    done
+    # END gitlab.scripts.configure.secrets
+    mkdir -p /${secret_dir}/ssh
+    cp -v -r -L /${config_dir}/ssh_host_* /${secret_dir}/ssh/
+    chmod 0400 /${secret_dir}/ssh/ssh_host_*
+  config.yml.tpl: |
+    # GitLab user. git by default
+    user: git
+
+    # Url to gitlab instance. Used for api calls. Should end with a slash.
+    gitlab_url: "http://gitlab-webservice-default.gitlab.svc:8181/"
+
+    secret_file: /etc/gitlab-secrets/shell/.gitlab_shell_secret
+
+    # File used as authorized_keys for gitlab user
+    auth_file: "/home/git/.ssh/authorized_keys"
+
+    # Log file.
+    # Default is gitlab-shell.log in the root directory.
+    log_file: "/var/log/gitlab-shell/gitlab-shell.log"
+
+    log_format: text
+
+    # Audit usernames.
+    # Set to true to see real usernames in the logs instead of key ids, which is easier to follow, but
+    # incurs an extra API call on every gitlab-shell command.
+    audit_usernames: false
+
+    
+# Leave this here - This line denotes end of block to the parser.

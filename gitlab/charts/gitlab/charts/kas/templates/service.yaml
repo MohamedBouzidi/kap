@@ -1,0 +1,38 @@
+---
+# Source: gitlab/charts/gitlab/charts/kas/templates/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: gitlab-kas
+  namespace: gitlab
+  labels:
+    app: kas
+    chart: kas-6.6.2
+    release: gitlab
+    heritage: Helm
+    
+    
+  annotations:
+    
+spec:
+  type: "ClusterIP"
+  ports:
+    - port: 8150
+      targetPort: 8150
+      protocol: TCP
+      name: grpc-kas-external-api
+    - port: 8153
+      targetPort: 8153
+      protocol: TCP
+      name: grpc-kas-internal-api
+    - port: 8154
+      targetPort: 8154
+      protocol: TCP
+      name: grpc-kas-k8s-api
+    - port: 8151
+      targetPort: http-metrics
+      protocol: TCP
+      name: http-metrics
+  selector:
+    app: kas
+    release: gitlab

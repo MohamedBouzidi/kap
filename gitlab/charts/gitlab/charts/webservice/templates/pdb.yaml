@@ -1,0 +1,23 @@
+---
+# Source: gitlab/charts/gitlab/charts/webservice/templates/pdb.yaml
+apiVersion: policy/v1beta1
+kind: PodDisruptionBudget
+metadata:
+  name: gitlab-webservice-default
+  namespace: gitlab
+  labels:
+    app: webservice
+    chart: webservice-6.6.2
+    release: gitlab
+    heritage: Helm
+    gitlab.com/webservice-name: default
+    
+spec:
+  maxUnavailable: 1
+  selector:
+    matchLabels:
+      app: webservice
+      release: gitlab
+      
+      
+      gitlab.com/webservice-name: default

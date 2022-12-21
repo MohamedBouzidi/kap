@@ -1,0 +1,25 @@
+---
+# Source: gitlab/charts/gitlab/charts/sidekiq/templates/hpa.yaml
+apiVersion: autoscaling/v2beta1
+kind: HorizontalPodAutoscaler
+metadata:
+  name: gitlab-sidekiq-all-in-1-v2
+  namespace: gitlab
+  labels:
+    app: sidekiq
+    chart: sidekiq-6.6.2
+    release: gitlab
+    heritage: Helm
+    
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: gitlab-sidekiq-all-in-1-v2
+  minReplicas: 1
+  maxReplicas: 10
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        targetAverageValue: 350m

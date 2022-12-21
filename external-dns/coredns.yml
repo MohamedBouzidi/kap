@@ -1,0 +1,167 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: coredns
+  namespace: external-dns
+  labels:
+    app: coredns
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - endpoints
+  - services
+  - pods
+  - namespaces
+  verbs:
+  - list
+  - watch
+- apiGroups:
+  - discovery.k8s.io
+  resources:
+  - endpointslices
+  verbs:
+  - list
+  - watch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: coredns
+  namespace: external-dns
+  labels:
+    app: coredns
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: coredns
+subjects:
+- kind: ServiceAccount
+  name: default
+  namespace: external-dns
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: coredns
+  namespace: external-dns
+  labels:
+    app: coredns
+data:
+  Corefile: |-
+    .:53 {
+        errors
+        ready
+        etcd dev.local {
+          path /skydns
+          endpoint http://$ETCD_ENDPOINT:2379
+          fallthrough
+        }
+        prometheus :9153
+        forward . /etc/resolv.conf
+        cache 30
+        reload
+        loadbalance
+        debug
+    }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: coredns
+  namespace: external-dns
+  labels:
+    app.kubernetes.io/managed-by: "Helm"
+    app.kubernetes.io/instance: "coredns"
+    helm.sh/chart: "coredns-1.19.7"
+    k8s-app: coredns
+    kubernetes.io/cluster-service: "true"
+    kubernetes.io/name: "CoreDNS"
+    app.kubernetes.io/name: coredns
+    app.kubernetes.io/version: "1.9.4"
+spec:
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 25%
+  selector:
+    matchLabels:
+      app: coredns
+  template:
+    metadata:
+      labels:
+        app: coredns
+      annotations:
+        checksum/config: 118df1e62308f11ebf7f742da85bfc665029f98db993ab96c136de2a96ab89d0
+        scheduler.alpha.kubernetes.io/tolerations: '[{"key":"CriticalAddonsOnly", "operator":"Exists"}]'
+    spec:
+      terminationGracePeriodSeconds: 30
+      serviceAccountName: default
+      dnsPolicy: Default
+      containers:
+      - name: "coredns"
+        image: "coredns/coredns:1.9.4"
+        imagePullPolicy: IfNotPresent
+        args: [ "-conf", "/etc/coredns/Corefile" ]
+        volumeMounts:
+        - name: config-volume
+          mountPath: /etc/coredns
+        resources:
+          limits:
+            cpu: 100m
+            memory: 128Mi
+          requests:
+            cpu: 100m
+            memory: 128Mi
+        ports:
+        - {containerPort: 53, protocol: UDP, name: udp-53}
+        - {containerPort: 53, protocol: TCP, name: tcp-53}
+        - {containerPort: 9153, protocol: TCP, name: tcp-9153}
+        
+          #livenessProbe:
+          #   httpGet:
+          #  path: /health
+          #  port: 8080
+          #  scheme: HTTP
+          #initialDelaySeconds: 60
+          #periodSeconds: 10
+          #timeoutSeconds: 5
+          #successThreshold: 1
+          #failureThreshold: 5
+          #readinessProbe:
+          #httpGet:
+          #  path: /ready
+          #  port: 8181
+          #  scheme: HTTP
+          #initialDelaySeconds: 30
+          #periodSeconds: 10
+          #timeoutSeconds: 5
+          #successThreshold: 1
+          #failureThreshold: 5
+      volumes:
+        - name: config-volume
+          configMap:
+            name: coredns
+            items:
+            - key: Corefile
+              path: Corefile
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: coredns
+  namespace: external-dns
+  labels:
+    app: coredns
+spec:
+  selector:
+    app: coredns
+  ports:
+    - name: udp-53
+      port: 53
+      protocol: UDP
+    - name: tcp-53
+      port: 53
+      protocol: TCP

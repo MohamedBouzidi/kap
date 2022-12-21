@@ -1,0 +1,46 @@
+---
+# Source: gitlab/charts/gitlab/charts/kas/templates/configmap.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: gitlab-kas
+  namespace: gitlab
+  labels:
+    app: kas
+    chart: kas-6.6.2
+    release: gitlab
+    heritage: Helm
+    
+data:
+  # See https://gitlab.com/gitlab-org/cluster-integration/gitlab-agent/-/blob/master/pkg/kascfg/config_example.yaml
+  config.yaml: |
+    agent:
+      kubernetes_api:
+        listen:
+          address: :8154
+        url_path_prefix: /k8s-proxy
+      listen:
+        address: :8150
+        websocket: true
+    api:
+      listen:
+        address: :8153
+        authentication_secret_file: /etc/kas/.gitlab_kas_secret
+    gitlab:
+      address: http://gitlab-webservice-default.gitlab.svc:8181
+      authentication_secret_file: /etc/kas/.gitlab_kas_secret
+    observability:
+      listen:
+        address: :8151
+      liveness_probe:
+        url_path: /liveness
+      readiness_probe:
+        url_path: /readiness
+    private_api:
+      listen:
+        address: :8155
+        authentication_secret_file: /etc/kas/.gitlab_kas_private_api_secret
+    redis:
+      password_file: /etc/kas/redis/redis-password
+      server:
+        address: gitlab-redis-master.gitlab.svc:6379

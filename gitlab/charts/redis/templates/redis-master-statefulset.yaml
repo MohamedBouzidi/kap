@@ -1,0 +1,158 @@
+---
+# Source: gitlab/charts/redis/templates/redis-master-statefulset.yaml
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: gitlab-redis-master
+  namespace: "gitlab"
+  labels:
+    app: redis
+    chart: redis-11.3.4
+    release: gitlab
+    heritage: Helm
+spec:
+  selector:
+    matchLabels:
+      app: redis
+      release: gitlab
+      role: master
+  serviceName: gitlab-redis-headless
+  template:
+    metadata:
+      labels:
+        app: redis
+        chart: redis-11.3.4
+        release: gitlab
+        role: master
+      annotations:
+        checksum/health: 5eeabb177e9b1a53b0ccf538fa02a60802a51318cbadadefa78291f40803e42d
+        checksum/configmap: d91e3da32a0194a037ad006f8da75188d126239ba15c001c09320e8adfb213d8
+        checksum/secret: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+        prometheus.io/port: "9121"
+        prometheus.io/scrape: "true"
+    spec:
+      
+      securityContext:
+        fsGroup: 1001
+      serviceAccountName: default
+      containers:
+        - name: redis
+          image: docker.io/bitnami/redis:6.0.9-debian-10-r0
+          imagePullPolicy: "IfNotPresent"
+          securityContext:
+            runAsUser: 1001
+          command:
+            - /bin/bash
+            - -c
+            - /opt/bitnami/scripts/start-scripts/start-master.sh
+          env:
+            - name: REDIS_REPLICATION_MODE
+              value: master
+            - name: REDIS_PASSWORD_FILE
+              value: "/opt/bitnami/redis/secrets/redis-password"
+            - name: REDIS_TLS_ENABLED
+              value: "no"
+            - name: REDIS_PORT
+              value: "6379"
+          ports:
+            - name: redis
+              containerPort: 6379
+          livenessProbe:
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            # One second longer than command timeout should prevent generation of zombie processes.
+            timeoutSeconds: 6
+            successThreshold: 1
+            failureThreshold: 5
+            exec:
+              command:
+                - sh
+                - -c
+                - /health/ping_liveness_local.sh 5
+          readinessProbe:
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 2
+            successThreshold: 1
+            failureThreshold: 5
+            exec:
+              command:
+                - sh
+                - -c
+                - /health/ping_readiness_local.sh 1
+          resources:
+            null
+          volumeMounts:
+            - name: start-scripts
+              mountPath: /opt/bitnami/scripts/start-scripts
+            - name: health
+              mountPath: /health
+            - name: redis-password
+              mountPath: /opt/bitnami/redis/secrets/
+            - name: redis-data
+              mountPath: /data
+              subPath: 
+            - name: config
+              mountPath: /opt/bitnami/redis/mounted-etc
+            - name: redis-tmp-conf
+              mountPath: /opt/bitnami/redis/etc/
+        - name: metrics
+          image: docker.io/bitnami/redis-exporter:1.12.1-debian-10-r11
+          imagePullPolicy: "IfNotPresent"
+          command:
+            - /bin/bash
+            - -c
+            - |
+              if [[ -f '/secrets/redis-password' ]]; then
+              export REDIS_PASSWORD=$(cat /secrets/redis-password)
+              fi
+              redis_exporter
+          env:
+            - name: REDIS_ALIAS
+              value: gitlab-redis
+          volumeMounts:
+            - name: redis-password
+              mountPath: /secrets/
+          ports:
+            - name: metrics
+              containerPort: 9121
+          resources:
+            null
+      volumes:
+        - name: start-scripts
+          configMap:
+            name: gitlab-redis-scripts
+            defaultMode: 0755
+        - name: health
+          configMap:
+            name: gitlab-redis-health
+            defaultMode: 0755
+        - name: redis-password
+          secret:
+            secretName: "gitlab-redis-secret"
+            items:
+            - key: "secret"
+              path: redis-password
+        - name: config
+          configMap:
+            name: gitlab-redis
+        - name: redis-tmp-conf
+          emptyDir: {}
+  volumeClaimTemplates:
+    - metadata:
+        name: redis-data
+        labels:
+          app: redis
+          release: gitlab
+          heritage: Helm
+          component: master
+      spec:
+        accessModes:
+          - "ReadWriteOnce"
+        resources:
+          requests:
+            storage: "8Gi"
+        
+        selector:
+  updateStrategy:
+    type: RollingUpdate

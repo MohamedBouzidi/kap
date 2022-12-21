@@ -1,0 +1,158 @@
+---
+# Source: gitlab/charts/gitlab/charts/kas/templates/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gitlab-kas
+  namespace: gitlab
+  labels:
+    app: kas
+    chart: kas-6.6.2
+    release: gitlab
+    heritage: Helm
+    
+  annotations:
+    
+spec:
+  selector:
+    matchLabels:
+      app: kas
+      release: gitlab
+      
+  template:
+    metadata:
+      labels:
+        app: kas
+        chart: kas-6.6.2
+        release: gitlab
+        heritage: Helm
+        
+        
+      annotations:
+        checksum/config: 23757987e44fdaccee11503b9254b12793b7782b01cd5dde2db88e025e6698a5
+        cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
+        gitlab.com/prometheus_scrape: "true"
+        gitlab.com/prometheus_port: "8151"
+        gitlab.com/prometheus_path: /metrics
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8151"
+        prometheus.io/path: /metrics
+    spec:
+      
+      automountServiceAccountToken: false
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 1
+            podAffinityTerm:
+              topologyKey: "kubernetes.io/hostname"
+              labelSelector:
+                matchLabels:
+                  app: kas
+                  release: gitlab
+                  
+      securityContext:
+        runAsUser: 65532
+        runAsGroup: 65532
+        fsGroup: 65532      
+      
+      initContainers:
+        - name: certificates
+          image: "registry.gitlab.com/gitlab-org/build/cng/alpine-certificates:20191127-r2@sha256:367d437d024d7647432d67fb2442e3e5723af5930bad77d3535f4f8f4f8630d9"  
+          env:
+          
+          
+          volumeMounts:
+          - name: etc-ssl-certs
+            mountPath: /etc/ssl/certs
+            readOnly: false
+          - name: etc-pki-ca-trust-extracted-pem
+            mountPath: /etc/pki/ca-trust/extracted/pem
+            readOnly: false
+          resources:
+            requests:
+              cpu: 50m
+      containers:
+        
+        - name: kas
+          image: "registry.gitlab.com/gitlab-org/build/cng/gitlab-kas:v15.6.0"          
+          args:
+            - "--configuration-file=/etc/kas/config.yaml"
+          env:
+            - name: OWN_PRIVATE_API_HOST
+              value: gitlab-kas.gitlab.svc
+            - name: POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+            - name: OWN_PRIVATE_API_URL
+              value: "grpc://$(POD_IP):8155"
+          ports:
+            - containerPort: 8150
+              name: kas
+            - containerPort: 8154
+              name: kas-k8s-api
+            - containerPort: 8155
+              name: kas-private-api
+            - containerPort: 8151
+              name: http-metrics
+          readinessProbe:
+            httpGet:
+              path: /readiness
+              port: 8151
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /liveness
+              port: 8151
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          resources:
+            requests:
+              cpu: 100m
+              memory: 100M
+          volumeMounts:
+            - name: init-etc-kas
+              mountPath: /etc/kas
+              readOnly: true
+            
+            - name: etc-ssl-certs
+              mountPath: /etc/ssl/certs/
+              readOnly: true
+            - name: etc-pki-ca-trust-extracted-pem
+              mountPath: /etc/pki/ca-trust/extracted/pem
+              readOnly: true
+      terminationGracePeriodSeconds: 300
+      volumes:
+      
+      
+      - name: etc-ssl-certs
+        emptyDir:
+          medium: "Memory"
+      - name: etc-pki-ca-trust-extracted-pem
+        emptyDir:
+          medium: "Memory"
+      - name: init-etc-kas
+        projected:
+          defaultMode: 0440
+          sources:
+            - configMap:
+                name: gitlab-kas
+            - secret:
+                name: "gitlab-gitlab-kas-secret"
+                items:
+                  - key: "kas_shared_secret"
+                    path: .gitlab_kas_secret
+            - secret:
+                name: "gitlab-kas-private-api"
+                items:
+                  - key: "kas_private_api_secret"
+                    path: .gitlab_kas_private_api_secret
+            
+            
+            - secret:
+                name: "gitlab-redis-secret"
+                items:
+                  - key: "secret"
+                    path: redis/redis-password

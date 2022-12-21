@@ -1,0 +1,15 @@
+---
+# Source: gitlab/charts/gitlab/charts/gitlab-shell/templates/nginx-tcp-configmap.yml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: gitlab-nginx-ingress-tcp
+  namespace: gitlab
+  labels:
+    app: gitlab-shell
+    chart: gitlab-shell-6.6.2
+    release: gitlab
+    heritage: Helm
+    
+data:
+  "22": "gitlab/gitlab-gitlab-shell:22::"
