@@ -1,6 +1,6 @@
 ---
 # Source: gitlab/charts/gitlab/charts/sidekiq/templates/hpa.yaml
-apiVersion: autoscaling/v2beta1
+apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
   name: gitlab-sidekiq-all-in-1-v2
@@ -22,4 +22,6 @@ spec:
     - type: Resource
       resource:
         name: cpu
-        targetAverageValue: 350m
+        target:
+          type: Utilization
+          averageUtilization: 35

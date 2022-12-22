@@ -1,6 +1,6 @@
 ---
 # Source: gitlab/charts/gitlab/charts/sidekiq/templates/pdb.yaml
-apiVersion: policy/v1beta1
+apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
   name: gitlab-sidekiq-all-in-1-v1

@@ -1,6 +1,6 @@
 ---
 # Source: gitlab/charts/registry/templates/hpa.yaml
-apiVersion: autoscaling/v2beta1
+apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
   name: gitlab-registry
@@ -22,4 +22,6 @@ spec:
     - type: Resource
       resource:
         name: cpu
-        targetAverageUtilization: 75
+        target:
+          type: Utilization
+          averageUtilization: 75

@@ -83,6 +83,10 @@ data:
       tls-key-file = "/home/gitlab-runner/.gitlab-runner/certs/tls.key"
       [runners.kubernetes]
       image = "ubuntu:18.04"
+      namespace = "gitlab"
+      [[runners.kubernetes.volumes.secret]]
+        name = "gitlab-ca-secret"
+        mount_path = "/tmp/gitlab-runner/certs"
       [runners.cache]
         Type = "s3"
         Path = "gitlab-runner"

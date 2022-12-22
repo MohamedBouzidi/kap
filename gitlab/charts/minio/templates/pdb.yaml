@@ -1,6 +1,6 @@
 ---
 # Source: gitlab/charts/minio/templates/pdb.yaml
-apiVersion: policy/v1beta1
+apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
   name: gitlab-minio-v1

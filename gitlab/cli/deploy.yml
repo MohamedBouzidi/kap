@@ -1,0 +1,52 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: download-glab
+  namespace: gitlab
+data:
+  download_glab.sh: |
+    apk update -y
+    apk add gzip tar curl
+    curl -LO https://gitlab.com/gitlab-org/cli/-/releases/v1.24.1/downloads/glab_1.24.1_Linux_x86_64.tar.gz
+    tar xvzf glab_1.24.1_Linux_x86_64.tar.gz
+    cp bin/glab /cli/glab
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: gitlab-cli
+  namespace: gitlab
+spec:
+  initContainers:
+  - name: install
+    image: alpine:3.13
+    command: ['ash', '/script/download_glab.sh']
+    volumeMounts:
+    - mountPath: /cli
+      name: cache
+    - mountPath: /script
+      name: download-glab
+  containers:
+  - name: glab
+    image: alpine:3.13
+    command: ["/bin/ash"]
+    args:
+      - '-c'
+      - >-
+          cat /gitlab-ca/ca.crt >> /etc/ssl/certs/ca-certificates.crt;
+          mv /cli/glab /bin/glab;
+          tail -f /dev/null
+    volumeMounts:
+    - mountPath: /cli
+      name: cache
+    - mountPath: /gitlab-ca
+      name: gitlab-ca
+  volumes:
+  - name: cache
+    emptyDir: {}
+  - name: download-glab
+    configMap:
+      name: download-glab
+  - name: gitlab-ca
+    secret:
+      secretName: gitlab-ca-secret

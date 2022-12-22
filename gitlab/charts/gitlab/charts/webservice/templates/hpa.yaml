@@ -1,6 +1,6 @@
 ---
 # Source: gitlab/charts/gitlab/charts/webservice/templates/hpa.yaml
-apiVersion: autoscaling/v2beta1
+apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
   name: gitlab-webservice-default
@@ -23,4 +23,6 @@ spec:
     - type: Resource
       resource:
         name: cpu
-        targetAverageValue: 1
+        target:
+          type: Utilization
+          averageUtilization: 100
