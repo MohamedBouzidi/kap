@@ -5,19 +5,20 @@ metadata:
   namespace: service-1
   labels:
     app: project-one
+    version: 1
 spec:
   replicas: 1
   selector:
     matchLabels:
       app: project-one
-  spec:
+  template:
     metadata:
       labels:
         app: project-one
     spec:
       containers:
         - name: app
-          image: registry.dev.local/project-one:1.0.0
+          image: 10.96.239.109/gitlab-instance-3eba5058/project-one:latest
           ports:
             - containerPort: 8090
 ---
