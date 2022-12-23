@@ -1,15 +1,15 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
-namespace: ingress-nginx
+namespace: cert-manager
 commonLabels:
-  app.kubernetes.io/name: ingress-nginx-controller
-  app.kubernetes.io/part-of: ingress-nginx
+  app.kubernetes.io/name: cert-manager
+  app.kubernetes.io/part-of: cert-manager
 resources:
 - namespace.yml
+- crds/crds.yml
 - rbac/rbac.yml
 - configmap.yml
-- ingressclass.yaml
 - service.yml
 - deployment.yml
-- job.yml
 - webhook.yml
+- clusterissuer.yml

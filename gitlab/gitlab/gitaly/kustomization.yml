@@ -1,0 +1,12 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: gitlab
+commonLabels:
+  app.kubernetes.io/name: gitaly
+  app.kubernetes.io/part-of: gitlab
+resources:
+- configmap.yml
+- kustomization.yml
+- pdb.yaml
+- service.yaml
+- statefulset.yml

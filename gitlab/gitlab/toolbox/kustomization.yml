@@ -1,0 +1,10 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: gitlab
+commonLabels:
+  app.kubernetes.io/name: toolbox
+  app.kubernetes.io/part-of: gitlab
+resources:
+- configmap.yaml
+- deployment.yaml
+- kustomization.yml

@@ -1,0 +1,25 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: coredns
+  namespace: external-dns
+  labels:
+    app: coredns
+data:
+  Corefile: |-
+    .:53 {
+        errors
+        ready
+        etcd dev.local {
+          path /skydns
+          endpoint http://$ETCD_ENDPOINT:2379
+          fallthrough
+        }
+        prometheus :9153
+        forward . /etc/resolv.conf
+        cache 30
+        reload
+        loadbalance
+        debug
+    }

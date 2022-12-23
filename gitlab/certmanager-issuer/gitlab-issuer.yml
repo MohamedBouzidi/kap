@@ -1,0 +1,30 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: gitlab-selfsigned-ca
+  namespace: gitlab
+spec:
+  isCA: true
+  commonName: dev.local
+  secretName: gitlab-ca-secret
+  privateKey:
+    algorithm: ECDSA
+    size: 256
+  issuerRef:
+    name: kap-issuer
+    kind: ClusterIssuer
+    group: cert-manager.io
+---
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: gitlab-issuer
+  namespace: gitlab
+  labels:
+    app: certmanager-issuer
+    chart: certmanager-issuer-0.1.0
+    release: gitlab
+    heritage: Helm
+spec:
+  ca:
+    secretName: gitlab-ca-secret

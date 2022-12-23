@@ -1,0 +1,18 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: coredns
+  namespace: external-dns
+  labels:
+    app: coredns
+spec:
+  selector:
+    app: coredns
+  ports:
+    - name: udp-53
+      port: 53
+      protocol: UDP
+    - name: tcp-53
+      port: 53
+      protocol: TCP

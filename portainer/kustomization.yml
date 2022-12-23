@@ -6,10 +6,9 @@ commonLabels:
   app.kubernetes.io/part-of: ingress-nginx
 resources:
 - namespace.yml
+- crds/crds.yml
 - rbac/rbac.yml
 - configmap.yml
-- ingressclass.yaml
 - service.yml
 - deployment.yml
-- job.yml
 - webhook.yml

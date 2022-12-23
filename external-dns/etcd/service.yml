@@ -1,0 +1,16 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: etcd
+  namespace: external-dns
+spec:
+  selector:
+    app: external-dns-etcd
+  ports:
+    - protocol: TCP
+      port: 2379
+      name: client
+    - protocol: TCP
+      port: 2380
+      name: peer

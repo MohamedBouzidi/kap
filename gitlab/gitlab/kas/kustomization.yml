@@ -1,0 +1,14 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: gitlab
+commonLabels:
+  app.kubernetes.io/name: kas
+  app.kubernetes.io/part-of: gitlab
+resources:
+- configmap.yaml
+- deployment.yaml
+- hpa.yaml
+- ingress.yaml
+- kustomization.yml
+- pdb.yaml
+- service.yaml

@@ -5,11 +5,7 @@ commonLabels:
   app.kubernetes.io/name: ingress-nginx-controller
   app.kubernetes.io/part-of: ingress-nginx
 resources:
-- namespace.yml
 - rbac/rbac.yml
-- configmap.yml
-- ingressclass.yaml
 - service.yml
 - deployment.yml
-- job.yml
-- webhook.yml
+- apiservice.yml
