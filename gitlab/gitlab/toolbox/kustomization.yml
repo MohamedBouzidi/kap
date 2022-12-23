@@ -7,4 +7,3 @@ commonLabels:
 resources:
 - configmap.yaml
 - deployment.yaml
-- kustomization.yml

@@ -7,7 +7,6 @@ commonLabels:
 resources:
 - configmap.yaml
 - deployment.yaml
-- kustomization.yml
 - role-binding.yaml
 - role.yaml
 - service-account.yaml

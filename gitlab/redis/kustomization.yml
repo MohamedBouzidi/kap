@@ -6,9 +6,9 @@ commonLabels:
   app.kubernetes.io/part-of: gitlab
 resources:
 - configmap.yaml
+- configmap-scripts.yaml
 - headless-svc.yaml
 - health-configmap.yaml
-- kustomization.yml
 - metrics-svc.yaml
 - redis-master-statefulset.yaml
 - redis-master-svc.yaml

@@ -6,7 +6,6 @@ commonLabels:
   app.kubernetes.io/part-of: gitlab
 resources:
 - configmap.yml
-- kustomization.yml
 - pdb.yaml
 - service.yaml
 - statefulset.yml

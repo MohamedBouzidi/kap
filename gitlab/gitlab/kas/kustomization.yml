@@ -9,6 +9,5 @@ resources:
 - deployment.yaml
 - hpa.yaml
 - ingress.yaml
-- kustomization.yml
 - pdb.yaml
 - service.yaml

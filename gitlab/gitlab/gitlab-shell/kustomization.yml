@@ -9,7 +9,6 @@ resources:
 - configmap.yml
 - deployment.yaml
 - hpa.yaml
-- kustomization.yml
 - nginx-tcp-configmap.yml
 - pdb.yaml
 - service.yaml
