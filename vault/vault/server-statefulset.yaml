@@ -53,14 +53,12 @@ spec:
         fsGroup: 1000
       hostNetwork: false
       volumes:
-        
         - name: config
           configMap:
             name: vault-config
-  
-        - name: userconfig-vault-ca-secret
+        - name: userconfig-vault-secret
           secret:
-            secretName: vault-ca-secret
+            secretName: vault-secret
             defaultMode: 420
         - name: home
           emptyDir: {}
@@ -74,7 +72,7 @@ spec:
               cpu: 250m
               memory: 256Mi
   
-          image: hashicorp/vault-enterprise:1.12-ent
+          image: vault:1.12.2
           imagePullPolicy: IfNotPresent
           command:
           - "/bin/sh"
@@ -132,26 +130,18 @@ spec:
             
             
             - name: "VAULT_CACERT"
-              value: "/vault/userconfig/vault-ca-secret/ca.crt"
+              value: "/vault/userconfig/vault-secret/ca.crt"
             
           volumeMounts:
-          
             - name: audit
               mountPath: /vault/audit
-  
-  
-    
             - name: data
               mountPath: /vault/data
-    
-  
-  
             - name: config
               mountPath: /vault/config
-  
-            - name: userconfig-vault-ca-secret
+            - name: userconfig-vault-secret
               readOnly: true
-              mountPath: /vault/userconfig/vault-ca-secret
+              mountPath: /vault/userconfig/vault-secret
             - name: home
               mountPath: /home/vault
           ports:

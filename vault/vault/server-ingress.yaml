@@ -1,7 +1,4 @@
----
-# Source: vault/templates/server-ingress.yaml
 apiVersion: networking.k8s.io/v1
-
 kind: Ingress
 metadata:
   name: vault
@@ -13,20 +10,20 @@ metadata:
     app.kubernetes.io/managed-by: Helm
   annotations:
     kubernetes.io/ingress.class: nginx
-    
+    nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
 spec:
   rules:
     - host: "vault.dev.local"
       http:
         paths:
-
           - path: /
-            
             pathType: Prefix
-            
             backend:
-              
               service:
                 name: vault-active
                 port:
                   number: 8200
+  tls:
+    - hosts:
+        - "vault.dev.local"
+      secretName: vault-secret

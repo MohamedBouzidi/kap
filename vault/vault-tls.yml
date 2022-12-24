@@ -1,0 +1,71 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: vault-selfsigned-ca
+  namespace: vault
+spec:
+  isCA: true
+  commonName: dev.local
+  secretName: vault-ca-secret
+  privateKey:
+    algorithm: ECDSA
+    size: 256
+  issuerRef:
+    name: kap-issuer
+    kind: ClusterIssuer
+    group: cert-manager.io
+---
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: vault-issuer
+  namespace: vault
+  labels:
+    app: certmanager-issuer
+    chart: certmanager-issuer-0.1.0
+    release: vault
+    heritage: Helm
+spec:
+  ca:
+    secretName: vault-ca-secret
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: vault-certificate
+  namespace: vault
+spec:
+  isCA: false
+  commonName: vault.dev.local
+  secretName: vault-secret
+  privateKey:
+    algorithm: ECDSA
+    size: 256
+  dnsNames:
+    - vault.dev.local
+    - vault-0.vault-internal
+    - vault-1.vault-internal
+    - vault-2.vault-internal
+  ipAddresses:
+    - 127.0.0.1
+  issuerRef:
+    name: vault-issuer
+    kind: Issuer
+    group: cert-manager.io
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: consul-certificate
+  namespace: vault
+spec:
+  isCA: false
+  commonName: consul.dev.local
+  secretName: consul-secret
+  privateKey:
+    algorithm: ECDSA
+    size: 256
+  issuerRef:
+    name: vault-issuer
+    kind: Issuer
+    group: cert-manager.io

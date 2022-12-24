@@ -20,3 +20,4 @@ nodes:
     protocol: UDP
 - role: worker
 - role: worker
+- role: worker

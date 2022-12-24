@@ -18,4 +18,3 @@ resources:
 - server-service.yaml
 - server-statefulset.yaml
 - ui-service.yaml
-- vault-ingress.yml

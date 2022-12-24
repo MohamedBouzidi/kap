@@ -22,3 +22,7 @@ spec:
                 name: consul-consul-ui 
                 port:
                   number: 80
+  tls:
+    - hosts:
+        - "consul.dev.local"
+      secretName: consul-secret
