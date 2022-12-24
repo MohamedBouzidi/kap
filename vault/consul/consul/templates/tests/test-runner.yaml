@@ -1,0 +1,37 @@
+---
+# Source: consul/templates/tests/test-runner.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: "consul-consul-test"
+  namespace: vault
+  labels:
+    app: consul
+    chart: consul-helm
+    heritage: Helm
+    release: consul
+  annotations:
+    "helm.sh/hook": test-success
+spec:
+  containers:
+    - name: consul-test
+      image: "hashicorp/consul:1.14.2"
+      env:
+        - name: HOST_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.hostIP
+        - name: CONSUL_HTTP_ADDR
+          value: http://$(HOST_IP):8500
+      command:
+        - "/bin/sh"
+        - "-ec"
+        - |
+            consul members | tee members.txt
+            if [ $(grep -c consul-server members.txt) != $(grep consul-server members.txt | grep -c alive) ]
+            then
+              echo "Failed because not all consul servers are available"
+              exit 1
+            fi
+
+  restartPolicy: Never

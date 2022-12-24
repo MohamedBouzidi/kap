@@ -1,0 +1,28 @@
+---
+# Source: consul/templates/webhook-cert-manager-configmap.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: consul-consul-webhook-cert-manager-config
+  namespace: vault
+  labels:
+    app: consul
+    chart: consul-helm
+    heritage: Helm
+    release: consul
+    component: webhook-cert-manager
+data:
+  webhook-config.json: |-
+    [
+      {
+        "name": "consul-consul-connect-injector",
+        "tlsAutoHosts": [
+          "consul-consul-connect-injector",
+          "consul-consul-connect-injector.vault",
+          "consul-consul-connect-injector.vault.svc",
+          "consul-consul-connect-injector.vault.svc.cluster.local"
+        ],
+        "secretName": "consul-consul-connect-inject-webhook-cert",
+        "secretNamespace": "vault"
+      }
+    ]

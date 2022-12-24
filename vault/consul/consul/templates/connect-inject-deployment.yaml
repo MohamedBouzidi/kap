@@ -1,0 +1,134 @@
+---
+# Source: consul/templates/connect-inject-deployment.yaml
+# The deployment for running the Connect sidecar injector
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: consul-consul-connect-injector
+  namespace: vault
+  labels:
+    app: consul
+    chart: consul-helm
+    heritage: Helm
+    release: consul
+    component: connect-injector
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: consul
+      chart: consul-helm
+      release: consul
+      component: connect-injector
+  template:
+    metadata:
+      labels:
+        app: consul
+        chart: consul-helm
+        release: consul
+        component: connect-injector
+      annotations:
+        "consul.hashicorp.com/connect-inject": "false"
+    spec:
+      serviceAccountName: consul-consul-connect-injector
+      containers:
+        - name: sidecar-injector
+          image: "hashicorp/consul-k8s-control-plane:1.0.2"
+          ports:
+            - containerPort: 8080
+              name: webhook-server
+              protocol: TCP
+          env:
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: CONSUL_ADDRESSES
+              value: consul-consul-server.vault.svc
+            - name: CONSUL_GRPC_PORT
+              value: "8502"
+            - name: CONSUL_HTTP_PORT
+              value: "8500"
+            - name: CONSUL_DATACENTER
+              value: vault-kubernetes-tutorial
+            - name: CONSUL_API_TIMEOUT
+              value: 5s
+          command:
+            - "/bin/sh"
+            - "-ec"
+            - |
+              consul-k8s-control-plane inject-connect \
+                -log-level=info \
+                -log-json=false \
+                -default-inject=false \
+                -consul-image="hashicorp/consul:1.14.2" \
+                -consul-dataplane-image="hashicorp/consul-dataplane:1.0.0" \
+                -consul-k8s-image="hashicorp/consul-k8s-control-plane:1.0.2" \
+                -release-name="consul" \
+                -release-namespace="vault" \
+                -resource-prefix=consul-consul \
+                -listen=:8080 \
+                -default-enable-transparent-proxy=true \
+                -enable-cni=false \
+                -transparent-proxy-default-overwrite-probes=true \
+                -enable-consul-dns=true \
+                -default-enable-metrics=false \
+                -enable-gateway-metrics=true  \
+                -default-enable-metrics-merging=false  \
+                -default-merged-metrics-port=20100 \
+                -default-prometheus-scrape-port=20200 \
+                -default-prometheus-scrape-path="/metrics" \
+                -allow-k8s-namespace="*" \
+                -tls-cert-dir=/etc/connect-injector/certs \
+                -default-envoy-proxy-concurrency=2 \
+                -init-container-memory-limit=150Mi \
+                -init-container-memory-request=25Mi \
+                -init-container-cpu-limit=50m \
+                -init-container-cpu-request=50m \
+          startupProbe:
+            httpGet:
+              path: /readyz/ready
+              port: 9445
+              scheme: HTTP
+            initialDelaySeconds: 30
+            failureThreshold: 15
+            periodSeconds: 2
+            timeoutSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /readyz/ready
+              port: 9445
+              scheme: HTTP
+            failureThreshold: 2
+            initialDelaySeconds: 1
+            successThreshold: 1
+            timeoutSeconds: 5
+          readinessProbe:
+            httpGet:
+              path: /readyz/ready
+              port: 9445
+              scheme: HTTP
+            failureThreshold: 2
+            initialDelaySeconds: 2
+            successThreshold: 1
+            timeoutSeconds: 5
+          volumeMounts:
+            - name: certs
+              mountPath: /etc/connect-injector/certs
+              readOnly: true
+          resources:
+            limits:
+              cpu: 50m
+              memory: 50Mi
+            requests:
+              cpu: 50m
+              memory: 50Mi
+      volumes:
+        - name: certs
+          secret:
+            defaultMode: 420
+            secretName: consul-consul-connect-inject-webhook-cert

@@ -1,0 +1,31 @@
+---
+# Source: consul/templates/client-config-configmap.yaml
+# ConfigMap with extra configuration specified directly to the chart
+# for client agents only.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: consul-consul-client-config
+  namespace: vault
+  labels:
+    app: consul
+    chart: consul-helm
+    heritage: Helm
+    release: consul
+    component: client
+data:
+  client.json: |-
+    {
+    }
+  extra-from-values.json: |-
+    {}
+    
+  central-config.json: |-
+    {
+      "enable_central_service_config": true
+    }
+  
+  config.json: |-
+    {
+      "check_update_interval": "0s"
+    }
