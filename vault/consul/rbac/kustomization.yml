@@ -1,0 +1,21 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: vault
+commonLabels:
+  app.kubernetes.io/name: consul
+  app.kubernetes.io/part-of: vault
+resources:
+- client-role.yaml
+- client-rolebinding.yaml
+- client-serviceaccount.yaml
+- connect-inject-clusterrole.yaml
+- connect-inject-clusterrolebinding.yaml
+- connect-inject-leader-election-role.yaml
+- connect-inject-leader-election-rolebinding.yaml
+- connect-inject-serviceaccount.yaml
+- server-role.yaml
+- server-rolebinding.yaml
+- server-serviceaccount.yaml
+- webhook-cert-manager-clusterrole.yaml
+- webhook-cert-manager-clusterrolebinding.yaml
+- webhook-cert-manager-serviceaccount.yaml

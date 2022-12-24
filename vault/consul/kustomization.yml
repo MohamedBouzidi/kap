@@ -1,0 +1,24 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: vault
+commonLabels:
+  app.kubernetes.io/name: consul
+  app.kubernetes.io/part-of: vault
+resources:
+- crds
+- rbac
+- ui-service.yaml
+- dns-service.yaml
+- client-config-configmap.yaml
+- client-daemonset.yaml
+- connect-injector-disruptionbudget.yaml
+- connect-inject-service.yaml
+- connect-inject-deployment.yaml
+- connect-inject-mutatingwebhookconfiguration.yaml
+- server-config-configmap.yaml
+- server-disruptionbudget.yaml
+- server-service.yaml
+- server-statefulset.yaml
+- webhook-cert-manager-configmap.yaml
+- webhook-cert-manager-deployment.yaml
+- consul-ingress.yml

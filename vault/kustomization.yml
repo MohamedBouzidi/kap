@@ -6,3 +6,6 @@ commonLabels:
   app.kubernetes.io/part-of: vault
 resources:
 - namespace.yml
+- vault-issuer.yml
+- consul
+- vault
