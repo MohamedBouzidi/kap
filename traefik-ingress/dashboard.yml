@@ -14,6 +14,8 @@ metadata:
     helm.sh/chart: traefik-20.5.2
     app.kubernetes.io/managed-by: Helm
 spec:
+  entryPoints:
+  - websecure
   routes:
   - match: PathPrefix(`/dashboard`) || PathPrefix(`/api`)
     kind: Rule

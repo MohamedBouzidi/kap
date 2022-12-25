@@ -19,7 +19,9 @@ spec:
         - name: app
           image: registry.dev.local/team-x/project-one:latest
           ports:
-          - containerPort: 9080
+          - containerPort: 8090
+            protocol: TCP
+            name: web
       imagePullSecrets:
       - name: regcred
 ---
@@ -33,7 +35,7 @@ spec:
     app: project-one
   ports:
   - name: web
-    port: 9080
+    port: 8090
     protocol: TCP
 ---
 apiVersion: traefik.containo.us/v1alpha1
@@ -44,7 +46,7 @@ metadata:
 spec:
   stripPrefix:
     prefixes:
-      - "/service-1/"
+      - "/service-1"
     forceSlash: true
 ---
 apiVersion: traefik.containo.us/v1alpha1
@@ -56,7 +58,7 @@ metadata:
     kubernetes.io/ingress.class: "traefik-ingress"
 spec:
   entryPoints:
-    - traefik
+  - websecure
   routes:
     - kind: Rule
       match: PathPrefix(`/service-1`)
@@ -66,5 +68,5 @@ spec:
       services:
       - name: service-1
         namespace: service-1
-        port: 9080
+        port: web
   tls: {}

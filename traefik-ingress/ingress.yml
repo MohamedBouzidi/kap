@@ -1,19 +1,38 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: traefik-apps
+  name: traefik-https
   namespace: traefik
   annotations:
     kubernetes.io/ingress.class: "nginx"    
-    nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
-    #nginx.ingress.kubernetes.io/rewrite-target: /$2
+    nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
 spec:
   rules:
   - host: traefik.dev.local
     http:
       paths:
-      - #path: /traefik(/|$)(.*)
-        path: /
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: traefik-ingress-controller
+            port:
+              number: 443
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: traefik-dashboard
+  namespace: traefik
+  annotations:
+    kubernetes.io/ingress.class: "nginx"    
+    nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
+spec:
+  rules:
+  - host: traefik.dev.local
+    http:
+      paths:
+      - path: /dashboard
         pathType: Prefix
         backend:
           service:
@@ -28,7 +47,7 @@ metadata:
   namespace: traefik
   annotations:
     kubernetes.io/ingress.class: "nginx"    
-    nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
+    nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
 spec:
   rules:
   - host: traefik.dev.local
@@ -40,7 +59,7 @@ spec:
           service:
             name: traefik-ingress-controller
             port:
-              number: 443
+              number: 9000
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
