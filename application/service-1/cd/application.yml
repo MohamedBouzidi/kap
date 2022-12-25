@@ -1,3 +1,12 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: registrykey
+  namespace: service-1
+data:
+  .dockerconfigjson: ewkiYXV0aHMiOiB7CQkicmVnaXN0cnkuZGV2LmxvY2FsIjogewkJCSJ1c2VybmFtZSI6ICJyb290IiwJCQkicGFzc3dvcmQiOiAiZ2xwYXQtOGVDcnpLaXFLLUFHWmZUQW1FYTMiLAkJCSJhdXRoIjogImNtOXZkRHBuYkhCaGRDMDRaVU55ZWt0cGNVc3RRVWRhWmxSQmJVVmhNdz09IiwJCQkiZW1haWwiOiAiaG9yc2VAbW9ua2V5LmNvbSIJCX0JfX0= 
+type: kubernetes.io/dockerconfigjson
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -17,9 +26,11 @@ spec:
     spec:
       containers:
         - name: app
-          image: registry.dev.local/gitlab-instance-3eba5058/project-one:latest
+          image: registry.dev.local/gitlab-instance-08301f9e/project-one:latest 
           ports:
           - containerPort: 9080
+      imagePullSecrets:
+      - name: registrykey
 ---
 apiVersion: v1
 kind: Service
