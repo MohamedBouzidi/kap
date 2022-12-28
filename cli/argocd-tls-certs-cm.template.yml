@@ -1,0 +1,3 @@
+data:
+  $GITLAB_URL: |-
+     $GITLAB_CA
