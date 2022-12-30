@@ -5,6 +5,7 @@ commonLabels:
   app.kubernetes.io/name: gitlab
   app.kubernetes.io/part-of: gitlab
 resources:
+- namespace.yml
 - shared/
 - certmanager-issuer/
 - minio/

@@ -1,0 +1,48 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: $NAME-credentials
+  namespace: argocd
+  labels:
+    argocd.argoproj.io/secret-type: repository
+stringData:
+  type: git
+  url: https://$REPO_URL
+  password: $PASSWORD
+  username: $USERNAME
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: $NAME
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://$REPO_URL
+    targetRevision: HEAD
+    path: $APP_PATH
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: $NAMESPACE
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: regcred
+  namespace: $NAMESPACE
+data:
+  .dockerconfigjson: $DOCKER_CONFIG 
+type: kubernetes.io/dockerconfigjson
+gitlab.dev.local
+-----BEGIN CERTIFICATE-----
+    MIIBaTCCAQ+gAwIBAgIRAJ2nKH8Jbw23SMSiwlDYMu0wCgYIKoZIzj0EAwIwFDES
+    MBAGA1UEAxMJZGV2LmxvY2FsMB4XDTIyMTIyNTA1NTYyNloXDTIzMDMyNTA1NTYy
+    NlowFDESMBAGA1UEAxMJZGV2LmxvY2FsMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcD
+    QgAEUQkraP7HugOMkXn2bUEFFrpKhLLAELOn1ciI6Ul/so1zTJGCGn3y/Ki1/kmv
+    oC9F1Q88Mu+4dIZS6iD5bFaIqqNCMEAwDgYDVR0PAQH/BAQDAgKkMA8GA1UdEwEB
+    /wQFMAMBAf8wHQYDVR0OBBYEFNB7/o6guK6atjppMq19PmBBzxfXMAoGCCqGSM49
+    BAMCA0gAMEUCIGS1FNFePWxdVOIKH6/g1K5RTFDrMgJp1z4EUFmUipj2AiEAxnUD
+    u4OYVKkjiuD4gygvM9fL/Y4+MDKTxGbPFCSTqpk=
+    -----END CERTIFICATE-----
+    

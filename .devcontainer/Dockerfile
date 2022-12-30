@@ -2,9 +2,13 @@ FROM ubuntu:jammy
 
 RUN apt update -y && apt install -y vim curl tmux sudo zsh git jq tar \
   apt-transport-https ca-certificates software-properties-common gnupg2 \
-  language-pack-en
+  language-pack-en gettext-base dnsutils
 RUN useradd -ms /usr/bin/zsh user
 RUN echo 'user:user' | chpasswd
+RUN usermod -aG sudo user
+
+RUN apt update -y && apt install -y make
+RUN echo '192.168.65.2 gitlab.dev.local' >> /etc/hosts
 
 USER user
 RUN sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
@@ -17,6 +21,7 @@ RUN sh ~/.vim_runtime/install_awesome_vimrc.sh
 USER root
 RUN curl -L https://go.dev/dl/go1.19.4.linux-arm64.tar.gz -o /tmp/go.tar.gz
 RUN tar -C /usr/local -xzf /tmp/go.tar.gz && rm /tmp/go.tar.gz
+RUN go install -v golang.org/x/tools/gopls@latest
 
 RUN apt-get update -y && apt-get install gnupg lsb-release
 RUN mkdir -p /etc/apt/keyrings

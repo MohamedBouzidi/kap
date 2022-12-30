@@ -6,6 +6,5 @@ commonLabels:
   app.kubernetes.io/part-of: external-dns
 resources:
 - namespace.yml
-- etcd/
-- external-dns/rbac/rbac.yml
-- external-dns/
+- etcd
+- external-dns
