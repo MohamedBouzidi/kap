@@ -26,7 +26,7 @@ to quickly create a Cobra application.`,
 }
 
 func init() {
-	projectCmd.AddCommand(tokenCmd)
+	projectCreateCmd.AddCommand(tokenCmd)
 
 	// Here you will define your flags and configuration settings.
 

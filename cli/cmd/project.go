@@ -12,8 +12,8 @@ import (
 	"github.com/MohamedBouzidi/kapctl/internal/pkg/gitlab"
 )
 
-// projectCmd represents the project command
-var projectCmd = &cobra.Command{
+// projectCreateCmd represents the project command
+var projectCreateCmd = &cobra.Command{
 	Use:   "project",
 	Short: "A brief description of your command",
 	Long: `A longer description that spans multiple lines and likely contains examples
@@ -23,7 +23,7 @@ Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("project called")
+		fmt.Println("project create called")
 
 		projectName, err := cmd.Flags().GetString("project-name")
 		if err != nil {
@@ -33,24 +33,67 @@ to quickly create a Cobra application.`,
 		if err != nil {
 			log.Fatal(err)
 		}
+		projectUserName, err := cmd.Flags().GetString("project-user")
+		if err != nil {
+			log.Fatal(err)
+		}
+		projectUserEmail, err := cmd.Flags().GetString("project-user-email")
+		if err != nil {
+			log.Fatal(err)
+		}
+		projectUserInitialPassword, err := cmd.Flags().GetString("project-user-initial-password")
+		if err != nil {
+			log.Fatal(err)
+		}
 
 		log.Printf("Creating project %s - %s...", projectName, projectDescription)
-		gitlab.CreateProject(projectName, projectDescription)
+		groupID, namespaceID := gitlab.CreateGroup(projectName)
+		gitlab.CreateProject(projectName, projectDescription, namespaceID)
+		gitlab.CreateUser(projectUserName, projectUserEmail, projectUserInitialPassword, groupID)
+	},
+}
+
+var projectDeleteCmd = &cobra.Command{
+	Use:   "project",
+	Short: "A brief description of your command",
+	Long: `A longer description that spans multiple lines and likely contains examples
+and usage of using your command. For example:
+
+Cobra is a CLI library for Go that empowers applications.
+This application is a tool to generate the need files
+to quickly create a Cobra application.`,
+	Run: func(cmd *cobra.Command, args []string) {
+		fmt.Println("project delete called")
+
+		projectName, err := cmd.Flags().GetString("project-name")
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		log.Printf("Deleting project %s...", projectName)
+		gitlab.DeleteProject(projectName)
+		gitlab.DeleteGroup(projectName)
 	},
 }
 
 func init() {
-	createCmd.AddCommand(projectCmd)
+	createCmd.AddCommand(projectCreateCmd)
+	deleteCmd.AddCommand(projectDeleteCmd)
 
 	// Here you will define your flags and configuration settings.
 
 	// Cobra supports Persistent Flags which will work for this command
 	// and all subcommands, e.g.:
-	// projectCmd.PersistentFlags().String("foo", "", "A help for foo")
+	// projectCreateCmd.PersistentFlags().String("foo", "", "A help for foo")
 
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
-	// projectCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
-	projectCmd.Flags().String("project-name", "PROJECT NAME", "GitLab project name")
-	projectCmd.Flags().String("project-description", "PROJECT DESCRIPTION", "Gitlab project description")
+	// projectCreateCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	projectCreateCmd.Flags().String("project-name", "PROJECT NAME", "GitLab project name")
+	projectCreateCmd.Flags().String("project-description", "PROJECT DESCRIPTION", "Gitlab project description")
+	projectCreateCmd.Flags().String("project-user", "PROJECT USER", "GitLab project user")
+	projectCreateCmd.Flags().String("project-user-email", "PROJECT USER EMAIL", "GitLab project user email")
+	projectCreateCmd.Flags().String("project-user-initial-password", "PROJECT USER INITIAL PASSWORD", "GitLab project user initial password")
+
+	projectDeleteCmd.Flags().String("project-name", "PROJECT NAME", "Gitlab project name")
 }
