@@ -1,27 +1,48 @@
 #!/bin/env bash
 
-export GITLAB_URL="gitlab.dev.local"
-export GITLAB_CA=$(kubectl get secret/gitlab-ca-secret -n gitlab -o jsonpath='{.data.ca\.crt}' | base64 -d | tr '\n' '\t' | sed 's/\t/\n     /g')
 export SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
-envsubst < $SCRIPT_DIR/argocd-tls-certs-cm.template.yml > $SCRIPT_DIR/argocd-tls-certs-cm.yml
+function display_help() {
+    echo "Usage: $0 [option...]" >&2
+    echo
+    echo "   -s, --service                 ArgoCD application name"
+    echo "   -r, --repository              Gitlab repository"
+	echo "   -a, --argo-path               Manifests path in repository"
+	echo "   -n, --namespace               Manifests path in repository"
+	echo "   -u, --username                Gitlab repository username"
+	echo "   -p, --password                Gitlab repository password"
+	echo "   -h, --help                    Show help message"
+    echo
+    # echo some stuff here for the -a or --add-options 
+    exit 1
+}
 
-if [ -z "$(kubectl get configmap/argocd-tls-certs-cm -n argocd -o jsonpath='{.data}')" ]
-then
-	kubectl patch configmap/argocd-tls-certs-cm -n argocd --type json --patch "[{\"op\": \"add\", \"path\": \"/data\", \"value\": {\"$GITLAB_URL\": \"$GITLAB_CA\"}}]"
-else
-	kubectl patch configmap/argocd-tls-certs-cm -n argocd --type json --patch "[{\"op\": \"add\", \"path\": \"/data/$GITLAB_URL\", \"value\": \"$GITLAB_CA\"}]"
-fi
+function create_application() {
+	echo SERVICE: $SERVICE
+	echo REPOSITORY: $REPOSITORY
+	echo ARGO_PATH: $ARGO_PATH
+	echo NAMESPACE: $NAMESPACE
+	echo USERNAME: $USERNAME
+	echo PASSWORD: $PASSWORD
 
-#export NAME=service-1
-#export REPO_URL=gitlab.dev.local/team-x/project-one.git
-#export APP_PATH="cd"
-#export NAMESPACE=service-1
-#
-#export EMAIL="developer@project.one"
-#export USERNAME="developerx"
-#export PASSWORD="hellodeveloper"
-#export REGISTRY_URL="registry.dev.local/team-x/project-one"
-#export DOCKER_CONFIG=$(echo "{\"auths\":{\"$REGISTRY_URL\":{\"username\":\"$USERNAME\",\"password\":\"$PASSWORD\",\"email\":\"$EMAIL\"}}}" | base64 -w 0) 
-#
-#envsubst < $SCRIPT_DIR/application.yml | kubectl apply -f -
+	envsubst < $SCRIPT_DIR/application.yml | kubectl apply -f -
+}
+
+VALID_ARGS=$(getopt -o s:r:a:n:u:p:h --long service:,repository:,argo-path:,namespace:,username:,password:,help -- "$@")
+
+eval set -- "$VALID_ARGS"
+while [ : ]; do
+	case "$1" in
+		-h | --help ) display_help ;;
+		-s | --service ) export SERVICE=$2; shift 2 ;;
+		-r | --repository ) export REPOSITORY=$2; shift 2 ;;
+		-a | --argo-path ) export ARGO_PATH=$2; shift 2 ;;
+		-n | --namespace ) export NAMESPACE=$2; shift 2 ;;
+		-u | --username ) export USERNAME=$2; shift 2 ;;
+		-p | --password ) export PASSWORD=$2; shift 2 ;;
+		-- ) shift; break ;;
+		* ) break ;;
+	esac
+done
+
+create_application

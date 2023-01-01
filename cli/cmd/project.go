@@ -10,6 +10,7 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/MohamedBouzidi/kapctl/internal/pkg/gitlab"
+	"github.com/MohamedBouzidi/kapctl/internal/pkg/argocd"
 )
 
 // projectCreateCmd represents the project command
@@ -25,31 +26,32 @@ to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("project create called")
 
-		projectName, err := cmd.Flags().GetString("project-name")
-		if err != nil {
-			log.Fatal(err)
-		}
-		projectDescription, err := cmd.Flags().GetString("project-description")
-		if err != nil {
-			log.Fatal(err)
-		}
-		projectUserName, err := cmd.Flags().GetString("project-user")
-		if err != nil {
-			log.Fatal(err)
-		}
-		projectUserEmail, err := cmd.Flags().GetString("project-user-email")
-		if err != nil {
-			log.Fatal(err)
-		}
-		projectUserInitialPassword, err := cmd.Flags().GetString("project-user-initial-password")
-		if err != nil {
-			log.Fatal(err)
-		}
+		// projectName, err := cmd.Flags().GetString("project-name")
+		// if err != nil {
+		// 	log.Fatal(err)
+		// }
+		// projectDescription, err := cmd.Flags().GetString("project-description")
+		// if err != nil {
+		// 	log.Fatal(err)
+		// }
+		// projectUserName, err := cmd.Flags().GetString("project-user")
+		// if err != nil {
+		// 	log.Fatal(err)
+		// }
+		// projectUserEmail, err := cmd.Flags().GetString("project-user-email")
+		// if err != nil {
+		// 	log.Fatal(err)
+		// }
+		// projectUserInitialPassword, err := cmd.Flags().GetString("project-user-initial-password")
+		// if err != nil {
+		// 	log.Fatal(err)
+		// }
 
-		log.Printf("Creating project %s - %s...", projectName, projectDescription)
-		groupID, namespaceID := gitlab.CreateGroup(projectName)
-		gitlab.CreateProject(projectName, projectDescription, namespaceID)
-		gitlab.CreateUser(projectUserName, projectUserEmail, projectUserInitialPassword, groupID)
+		// log.Printf("Creating project %s - %s...", projectName, projectDescription)
+		// groupID, namespaceID := gitlab.CreateGroup(projectName)
+		// gitlab.CreateProject(projectName, projectDescription, namespaceID)
+		// gitlab.CreateUser(projectUserName, projectUserEmail, projectUserInitialPassword, groupID)
+		argocd.CreateProject()
 	},
 }
 

@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: app
-          image: registry.dev.local/team-x/project-one:latest
+          image: registry.dev.local/project-one/project-one:latest
           ports:
           - containerPort: 8090
             protocol: TCP

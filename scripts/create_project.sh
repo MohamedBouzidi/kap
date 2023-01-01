@@ -1,7 +1,15 @@
 #!/bin/env bash
 
-GITLAB_HOST=$1
-NAMESPACE=$2
+
+function display_help() {
+	echo "Usage: $0 [option...]" >&2
+	echo
+	echo "   -g, --gitlab-host                 Gitlab host"
+	echo "   -p, --project-name                Gitlab project name"
+	echo "   -n, --namespace                   Kubernetes namespace to store Gitlab token"
+	echo "   -h, --help                        Show help message"
+	exit 1
+}
 
 function auth() { 
 	export PASSWORD=$(kubectl get secret/gitlab-gitlab-initial-root-password -n gitlab -o jsonpath='{.data.password}' | base64 -d)
@@ -10,31 +18,26 @@ function auth() {
 }
 
 function create_group() {
-	GROUP_NAME=$1
-	GROUP_PATH=$2
 	export GROUP_ID=$(curl -k -s -X POST -H "$AUTH_HEADER" -H "Content-Type: application/json" \
-			-d "{\"name\":\"$GROUP_NAME\",\"path\":\"$GROUP_PATH\"}" \
+			-d "{\"name\":\"$PROJECT_NAME\",\"path\":\"$PROJECT_NAME\"}" \
 			"https://$GITLAB_HOST/api/v4/groups/" | jq -r ".id")
 }
 
 function create_user() {
-	GROUP_ID=$1
-	USER_NAME=
 	export USER_ID=$(curl -k -s -X POST -H "$AUTH_HEADER" -H "Content-Type: application/json" \
-			-d '{"email":"dev@project.one","name":"developer-x","username":"developerx","skip_confirmation":"true","password":"hellodeveloper"}' \
+			-d "{\"email\":\"admin@${PROJECT_NAME}.dev\",\"name\":\"${PROJECT_NAME}-owner\",\"username\":\"${PROJECT_NAME}-owner\",\"skip_confirmation\":\"true\",\"password\":\"hellodeveloper\"}" \
 			"https://$GITLAB_HOST/api/v4/users/" | jq -r ".id")
 
 	curl -k -s -X POST -H "$AUTH_HEADER" -H "Content-Type: application/json" \
 		-d "{\"id\":\"$GROUP_ID\",\"user_id\":\"$USER_ID\",\"access_level\":\"50\"}" \
-		"https://$GITLAB_HOST/api/v4/groups/$GROUP_ID/members"
+		"https://$GITLAB_HOST/api/v4/groups/$GROUP_ID/members" > /dev/null 2>&1
 }
 
 function create_project() {
-	GROUP_ID=$1
 	NAMESPACE_ID=$(curl -k -s -X GET -H "$AUTH_HEADER" -H "Content-Type: application/json" \
 		"https://$GITLAB_HOST/api/v4/namespaces/$GROUP_ID" | jq -r ".id")
 	export PROJECT_ID=$(curl -k -s -X POST -H "$AUTH_HEADER" -H "Content-Type: application/json" \
-			-d "{\"name\":\"project-one\",\"description\":\"Project One\",\"path\":\"project-one\",\"namespace_id\":\"$NAMESPACE_ID\",\"initialize_with_readme\":\"true\"}" \
+			-d "{\"name\":\"$PROJECT_NAME\",\"description\":\"Description for $PROJECT_NAME\",\"path\":\"$PROJECT_NAME\",\"namespace_id\":\"$NAMESPACE_ID\",\"initialize_with_readme\":\"true\"}" \
 			"https://$GITLAB_HOST/api/v4/projects" | jq -r ".id")
 }
 
@@ -42,21 +45,34 @@ function create_token() {
 	PROJECT_TOKEN=$(curl -k -s -X POST -H "$AUTH_HEADER" -H "Content-Type: application/json" \
 		-d '{ "name":"test_token", "scopes":["api", "read_repository", "write_repository", "read_registry", "write_registry"], "expires_at":"2023-01-31", "access_level": 40 }' \
 		"https://$GITLAB_HOST/api/v4/projects/$PROJECT_ID/access_tokens" | jq -r ".token")
-	kubectl create secret generic gitlab-token --from-literal=token=$PROJECT_TOKEN -n ${NAMESPACE:-default}
+	kubectl create secret generic gitlab-token --from-literal=token=$PROJECT_TOKEN -n ${NAMESPACE}
 }
 
-while getopts ":g:p:u:" options; do
-	case "${options}" in
-		g)
-			GROUP_NAME=${OPTARG}
-			;;
-		p)
-			PROJECT_NAME=${OPTARG}
-			;;
-		u)
-			USER_NAME=${OPTARG}
-			;;
+GITLAB_DEFAULT_HOST="gitlab.dev.local:9443"
+DEFAULT_NAMESPACE="default"
+VALID_ARGS=$(getopt -o g:p:n:h --long gitlab-host:,project-name:,namespace:,help -- "$@")
+
+eval set -- "$VALID_ARGS"
+while [ : ]; do
+	case "$1" in
+		-h | --help ) display_help ;;
+		-g | --gitlab ) export GITLAB_HOST=$2; shift 2 ;;
+		-p | --project-name ) export PROJECT_NAME=$2; shift 2 ;;
+		-n | --namespace ) export NAMESPACE=$2; shift 2 ;;
+		-- ) shift; break ;;
+		* ) break ;;
 	esac
 done
 
-echo $PROJECT_NAME $USER_NAME
+GITLAB_HOST=${GITLAB_HOST:-$GITLAB_DEFAULT_HOST}
+NAMESPACE=${NAMESPACE:-$DEFAULT_NAMESPACE}
+
+echo GITLAB HOST: $GITLAB_HOST
+echo PROJECT NAME: $PROJECT_NAME
+echo NAMESPACE: $NAMESPACE
+
+auth
+create_group
+create_user
+create_project
+create_token

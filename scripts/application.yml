@@ -1,36 +1,28 @@
 apiVersion: v1
 kind: Secret
 metadata:
-  name: $NAME-credentials
+  name: $SERVICE-credentials
   namespace: argocd
   labels:
     argocd.argoproj.io/secret-type: repository
 stringData:
   type: git
-  url: https://$REPO_URL
+  url: https://$REPOSITORY
   password: $PASSWORD
   username: $USERNAME
 ---
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: $NAME
+  name: $SERVICE
   namespace: argocd
 spec:
   project: default
   source:
-    repoURL: https://$REPO_URL
+    repoURL: https://$REPOSITORY
     targetRevision: HEAD
-    path: $APP_PATH
+    path: $ARGO_PATH
   destination:
     server: https://kubernetes.default.svc
-    namespace: $NAMESPACE
----
-apiVersion: v1
-kind: Secret
-metadata:
-  name: regcred
-  namespace: $NAMESPACE
-data:
-  .dockerconfigjson: $DOCKER_CONFIG 
-type: kubernetes.io/dockerconfigjson
+    namespace: $SERVICESPACE
+
