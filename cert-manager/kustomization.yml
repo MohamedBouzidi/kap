@@ -11,4 +11,3 @@ resources:
 - service.yml
 - deployment.yml
 - webhook.yml
-- clusterissuer.yml

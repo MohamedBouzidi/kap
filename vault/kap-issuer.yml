@@ -1,0 +1,33 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: vault-issuer
+  namespace: cert-manager
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: vault-issuer-token
+  namespace: cert-manager
+  annotations:
+    kubernetes.io/service-account.name: vault-issuer
+type: kubernetes.io/service-account-token
+---
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: kap-vault-issuer
+spec:
+  vault:
+    server: https://vault.vault:8200
+    path: pki/sign/kap-domain
+    caBundleSecretRef:
+      name: vault-ca-secret
+      key: tls.crt
+    auth:
+      kubernetes:
+        mountPath: /v1/auth/kubernetes
+        role: vault-issuer
+        secretRef:
+          name: vault-issuer-token
+          key: token

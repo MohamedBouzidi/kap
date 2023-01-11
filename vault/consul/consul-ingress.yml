@@ -10,6 +10,8 @@ metadata:
     nginx.ingress.kubernetes.io/proxy-read-timeout: "600"
     nginx.ingress.kubernetes.io/proxy-connect-timeout: "15"
     nginx.ingress.kubernetes.io/service-upstream: "true"
+    cert-manager.io/cluster-issuer: kap-vault-issuer
+    cert-manager.io/common-name: consul.dev.local
 spec:
   rules:
     - host: consul.dev.local
@@ -24,5 +26,5 @@ spec:
                   number: 80
   tls:
     - hosts:
-        - "consul.dev.local"
-      secretName: consul-secret
+      - consul.dev.local
+      secretName: consul-cert

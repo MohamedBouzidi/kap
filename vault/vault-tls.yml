@@ -1,24 +1,7 @@
 apiVersion: cert-manager.io/v1
-kind: Certificate
-metadata:
-  name: vault-selfsigned-ca
-  namespace: vault
-spec:
-  isCA: true
-  commonName: dev.local
-  secretName: vault-ca-secret
-  privateKey:
-    algorithm: ECDSA
-    size: 256
-  issuerRef:
-    name: kap-issuer
-    kind: ClusterIssuer
-    group: cert-manager.io
----
-apiVersion: cert-manager.io/v1
 kind: Issuer
 metadata:
-  name: vault-issuer
+  name: vault-ss-issuer
   namespace: vault
   labels:
     app: certmanager-issuer
@@ -26,37 +9,62 @@ metadata:
     release: vault
     heritage: Helm
 spec:
-  ca:
-    secretName: vault-ca-secret
+  selfSigned: {}
 ---
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
-  name: vault-certificate
+  name: vault-ss-ca
+  namespace: vault
+spec:
+  isCA: true
+  commonName: vault-ss-ca
+  secretName: vault-ss-ca-secret
+  privateKey:
+    algorithm: ECDSA
+    size: 256
+  issuerRef:
+    name: vault-ss-issuer
+    kind: Issuer
+    group: cert-manager.io
+---
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: vault-ss-ca-issuer
+  namespace: vault
+spec:
+  ca:
+    secretName: vault-ss-ca-secret
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: vault-ss-cert
   namespace: vault
 spec:
   isCA: false
-  commonName: vault.dev.local
+  commonName: vault.vault
   secretName: vault-secret
   privateKey:
     algorithm: ECDSA
     size: 256
   dnsNames:
-    - vault.dev.local
     - vault-0.vault-internal
     - vault-1.vault-internal
     - vault-2.vault-internal
+    - vault.vault
   ipAddresses:
     - 127.0.0.1
   issuerRef:
-    name: vault-issuer
+    name: vault-ss-ca-issuer
     kind: Issuer
     group: cert-manager.io
 ---
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
-  name: consul-certificate
+  name: consul-ss-cert
   namespace: vault
 spec:
   isCA: false
@@ -66,6 +74,6 @@ spec:
     algorithm: ECDSA
     size: 256
   issuerRef:
-    name: vault-issuer
+    name: vault-ss-ca-issuer
     kind: Issuer
     group: cert-manager.io

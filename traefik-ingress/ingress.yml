@@ -6,6 +6,8 @@ metadata:
   annotations:
     kubernetes.io/ingress.class: "nginx"    
     nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
+    cert-manager.io/cluster-issuer: kap-vault-issuer
+    cert-manager.io/common-name: traefik.dev.local
 spec:
   rules:
   - host: traefik.dev.local
@@ -18,6 +20,10 @@ spec:
             name: traefik-ingress-controller
             port:
               number: 443
+  tls:
+  - hosts:
+    - traefik.dev.local
+    secretName: traefik-cert
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
@@ -39,6 +45,10 @@ spec:
             name: traefik-ingress-controller
             port:
               number: 9000
+  tls:
+  - hosts:
+    - traefik.dev.local
+    secretName: traefik-cert
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
@@ -60,6 +70,10 @@ spec:
             name: traefik-ingress-controller
             port:
               number: 9000
+  tls:
+  - hosts:
+    - traefik.dev.local
+    secretName: traefik-cert
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
@@ -81,3 +95,7 @@ spec:
             name: traefik-ingress-controller
             port:
               number: 9100
+  tls:
+  - hosts:
+    - traefik.dev.local
+    secretName: traefik-cert
