@@ -11,7 +11,7 @@ spec:
     algorithm: ECDSA
     size: 256
   issuerRef:
-    name: kap-issuer
+    name: kap-vault-issuer
     kind: ClusterIssuer
     group: cert-manager.io
 ---

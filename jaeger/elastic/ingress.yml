@@ -1,0 +1,53 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: jaeger-elasticsearch
+  namespace: elastic-system
+  annotations:
+    kubernetes.io/ingress.class: "nginx"    
+    nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
+    cert-manager.io/cluster-issuer: kap-vault-issuer
+    cert-manager.io/common-name: elasticsearch.dev.local
+spec:
+  rules:
+  - host: elasticsearch.dev.local
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: jaeger-es-http
+            port:
+              number: 9200
+  tls:
+  - hosts:
+    - elasticsearch.dev.local
+    secretName: elasticsearch-cert
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: jaeger-kibana
+  namespace: elastic-system
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+    nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
+    cert-manager.io/cluster-issuer: kap-vault-issuer
+    cert-manager.io/common-name: kibana.dev.local
+spec:
+  rules:
+  - host: kibana.dev.local
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: jaeger-kb-http
+            port:
+              number: 5601
+  tls:
+  - hosts:
+    - kibana.dev.local
+    secretName: kibana-cert

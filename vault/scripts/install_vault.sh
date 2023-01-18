@@ -6,8 +6,6 @@ function loading() {
     pid=$1
     msg=$2
 
-    echo $pid $msg
-
     declare arr=(
         ""
         "."

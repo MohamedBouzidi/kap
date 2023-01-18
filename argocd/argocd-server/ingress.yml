@@ -6,6 +6,8 @@ metadata:
   annotations:
     kubernetes.io/ingress.class: "nginx"    
     nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
+    cert-manager.io/cluster-issuer: kap-vault-issuer
+    cert-manager.io/common-name: argocd.dev.local
 spec:
   rules:
   - host: argocd.dev.local
@@ -18,3 +20,7 @@ spec:
             name: argocd-server 
             port:
               name: https
+  tls:
+  - hosts:
+    - argocd.dev.local
+    secretName: argocd-cert

@@ -315,6 +315,8 @@ metadata:
   annotations:
     kubernetes.io/ingress.class: "nginx"    
     nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
+    cert-manager.io/cluster-issuer: kap-vault-issuer
+    cert-manager.io/common-name: dashboard.dev.local
 spec:
   rules:
   - host: dashboard.dev.local
@@ -327,6 +329,10 @@ spec:
             name: kubernetes-dashboard
             port:
               number: 443
+  tls:
+  - hosts:
+    - dashboard.dev.local
+    secretName: dashboard-cert
 
 ---
 

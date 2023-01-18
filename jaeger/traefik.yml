@@ -1,0 +1,59 @@
+apiVersion: jaegertracing.io/v1
+kind: Jaeger
+metadata:
+  name: jaeger-traefik
+  namespace: traefik
+spec:
+  strategy: production
+  collector:
+    maxReplicas: 5
+    resources:
+      limits:
+        cpu: 100m
+        memory: 128Mi
+  storage:
+      type: elasticsearch
+      options:
+        es:
+          server-urls: https://jaeger-es-http.elastic-system.svc:9200
+          index-prefix: traefik
+          version: 7
+          create-index-templates: false
+          tls:
+            ca: /es/certificates/ca.crt
+      secretName: jaeger-es-secret
+  volumeMounts:
+  - name: certificates
+    mountPath: /es/certificates
+    readOnly: true
+  volumes:
+  - name: certificates
+    secret:
+      secretName: jaeger-es-http-certs-public
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: jaeger
+  namespace: traefik
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/backend-protocol: HTTP
+    cert-manager.io/cluster-issuer: kap-vault-issuer
+    cert-manager.io/common-name: jaeger.dev.local
+spec:
+  rules:
+  - host: jaeger.dev.local
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: jaeger-traefik-query
+            port:
+              number: 16686
+  tls:
+  - hosts:
+    - jaeger.dev.local
+    secretName: jaeger-cert

@@ -10,6 +10,8 @@ metadata:
     app.kubernetes.io/instance: traefik-ingress-controller-traefik
     helm.sh/chart: traefik-20.5.2
     app.kubernetes.io/managed-by: Helm
+  annotations:
+    sidecar.jaegertracing.io/inject: "true"
 spec:
   replicas: 1
   selector:
@@ -25,10 +27,10 @@ spec:
   template: 
     metadata:
       annotations:
-        prometheus.io/scrape: "true"
+        # prometheus.io/scrape: "true"
         prometheus.io/path: "/metrics"
         prometheus.io/port: "9100"
-        sidecar.jaegertracing.io/inject: "true"
+        # sidecar.jaegertracing.io/inject: "true"
       labels:
         app.kubernetes.io/name: traefik
         app.kubernetes.io/instance: traefik-ingress-controller-traefik
@@ -86,9 +88,9 @@ spec:
           capabilities:
             drop:
             - ALL
-          readOnlyRootFilesystem: true
+          # readOnlyRootFilesystem: true
           runAsGroup: 65532
-          runAsNonRoot: true
+          # runAsNonRoot: true
           runAsUser: 65532
         volumeMounts:
           - name: data
@@ -98,8 +100,8 @@ spec:
         args:
           - "--log.level=DEBUG"
           - "--accesslog=true"
-          - "--api=true"
-          - "--api.dashboard=true"
+          # - "--api=true"
+          # - "--api.dashboard=true"
           - "--api.insecure"
           - "--global.checknewversion"
           - "--global.sendanonymoususage"
@@ -108,15 +110,15 @@ spec:
           - "--entrypoints.web.address=:8000/tcp"
           - "--entrypoints.websecure.address=:8443/tcp"
           - "--providers.kubernetescrd"
-          - "--providers.kubernetescrd.namespaces=traefik,service-1"
-          - "--providers.kubernetescrd.allowCrossNamespace=true"
-          - "--providers.kubernetescrd.allowExternalNameServices=true"
+          - "--providers.kubernetescrd.namespaces=traefik,service-1,microservices"
+          # - "--providers.kubernetescrd.allowCrossNamespace=true"
+          # - "--providers.kubernetescrd.allowExternalNameServices=true"
           - "--providers.kubernetescrd.ingressClass=traefik-ingress"
           - "--providers.kubernetesingress"
           - "--providers.kubernetesingress.namespaces=traefik,service-1"
-          - "--providers.kubernetesingress.allowExternalNameServices=true"
-          - "--providers.kubernetesingress.allowEmptyServices=true"
-          - "--entrypoints.websecure.http.tls=true"
+          # - "--providers.kubernetesingress.allowExternalNameServices=true"
+          # - "--providers.kubernetesingress.allowEmptyServices=true"
+          # - "--entrypoints.websecure.http.tls=true"
           - "--ping=true"
           - "--metrics.prometheus=true"
           - "--metrics.prometheus.entrypoint=metrics"
