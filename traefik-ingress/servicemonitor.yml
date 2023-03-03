@@ -1,0 +1,17 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: traefik-ingress-metrics
+  namespace: monitoring
+  labels:
+    app: traefik-ingress-metrics
+    prometheus: monitoring
+spec:
+  endpoints:
+  - port: metrics
+  namespaceSelector:
+    matchNames:
+    - traefik
+  selector:
+    matchLabels:
+      app: traefik-ingress-metrics

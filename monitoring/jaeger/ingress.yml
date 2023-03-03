@@ -1,0 +1,26 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: jaeger
+  namespace: traefik
+  annotations:
+    nginx.ingress.kubernetes.io/backend-protocol: HTTP
+    cert-manager.io/cluster-issuer: kap-vault-issuer
+    cert-manager.io/common-name: jaeger.dev.local
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: jaeger.dev.local
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: jaeger-traefik-query
+            port:
+              number: 16686
+  tls:
+  - hosts:
+    - jaeger.dev.local
+    secretName: jaeger-cert

@@ -30,7 +30,7 @@ kubectl create -k $SCRIPT_DIR/..
 
 echo
 
-kubectl wait --for=condition=Ready --selector app.kubernetes.io/name=vault --selector component=server --timeout=60s pod > /dev/null 2>&1 &
+kubectl wait --namespace vault --for=condition=Ready --selector app.kubernetes.io/name=vault --selector component=server --timeout=60s pod > /dev/null 2>&1 &
 pid=$!
 
 loading $pid "Waiting for Vault to be ready"

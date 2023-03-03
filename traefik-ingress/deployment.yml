@@ -122,6 +122,8 @@ spec:
           - "--ping=true"
           - "--metrics.prometheus=true"
           - "--metrics.prometheus.entrypoint=metrics"
+          - "--metrics.prometheus.addrouterslabels=true"
+          - "--metrics.prometheus.addServicesLabels=true"
           - "--tracing=true"
           - "--tracing.jaeger=true"
           - "--tracing.jaeger.samplingServerURL=http://localhost:5778/sampling"

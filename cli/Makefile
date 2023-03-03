@@ -1,6 +1,9 @@
 BINARY_NAME=kapctl
 
-build:
+depends:
+	go mod tidy
+
+build: depends
 	GOARCH=amd64 GOOS=linux go build -o ${BINARY_NAME} main.go
 
 create:
@@ -13,4 +16,4 @@ clean:
 	go clean
 	rm ${BINARY_NAME}
 
-.PHONY: build create delete clean
+.PHONY: build create delete clean depends

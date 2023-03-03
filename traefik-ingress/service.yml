@@ -10,6 +10,7 @@ metadata:
     app.kubernetes.io/instance: traefik-ingress-controller-traefik
     helm.sh/chart: traefik-20.5.2
     app.kubernetes.io/managed-by: Helm
+    app: traefik-ingress-metrics
 spec:
   type: NodePort
   selector:
