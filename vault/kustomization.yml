@@ -7,5 +7,3 @@ commonLabels:
 resources:
 - namespace.yml
 - vault-tls.yml
-- consul
-- vault

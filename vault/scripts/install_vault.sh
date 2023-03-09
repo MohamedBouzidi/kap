@@ -26,17 +26,52 @@ function loading() {
     echo "[*] $msg"
 }
 
+#### INSTALL NAMESPACE
+
 kubectl create -k $SCRIPT_DIR/..
+
+#### INSTALL CONSUL
+
+kubectl create -k $SCRIPT_DIR/../consul
 
 echo
 
-kubectl wait --namespace vault --for=condition=Ready --selector app.kubernetes.io/name=vault --selector component=server --timeout=60s pod > /dev/null 2>&1 &
+while [ -n "$(kubectl get pods --selector app.kubernetes.io/name=consul --namespace vault > /dev/null 2>&1)" ]
+do
+    sleep 1
+done
+kubectl wait --namespace vault --for=condition=Ready --selector app.kubernetes.io/name=consul pod --timeout=300s > /dev/null 2>&1 &
+pid=$!
+
+loading $pid "Waiting for Consul to be ready"
+
+echo
+
+#### INSTALL VAULT
+
+kubectl create -k $SCRIPT_DIR/../vault
+
+echo
+
+while [ "$(kubectl get statefulset/vault -n vault -o jsonpath='{.status.availableReplicas}')" -eq "0" ]
+do
+    sleep 1
+done
+kubectl wait --namespace vault --for=condition=Ready --selector app.kubernetes.io/name=vault pod --timeout=300s > /dev/null 2>&1 &
 pid=$!
 
 loading $pid "Waiting for Vault to be ready"
+
+echo
+
+#### SETUP VAULT
 
 bash $SCRIPT_DIR/init_vault.sh
 
 bash $SCRIPT_DIR/enable_pki.sh
 
 bash $SCRIPT_DIR/create_clusterissuer.sh
+
+#### INSTALL CLUSTER ISSUER
+
+kubectl create -f $SCRIPT_DIR/../kap-issuer.yml

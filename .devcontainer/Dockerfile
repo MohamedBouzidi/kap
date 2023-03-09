@@ -26,7 +26,7 @@ RUN curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /
 RUN echo \
   "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
   $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null && \
-apt-get update -y && apt-get install docker-ce-cli
+apt-get update -y && apt-get install -y docker-ce-cli
 
 RUN curl -L "https://releases.hashicorp.com/terraform/1.3.7/terraform_1.3.7_linux_arm.zip" -o "terraform.zip" && \
 unzip terraform.zip && rm terraform.zip && chmod +x terraform && mv terraform /usr/local/bin

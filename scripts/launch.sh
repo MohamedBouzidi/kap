@@ -13,21 +13,36 @@ kubectl wait -n ingress-nginx --for=condition=ready pod --selector=app.kubernete
 
 bash ./vault/scripts/install_vault.sh
 
+kubectl create -k ./portainer
+kubectl wait -n portainer --for=condition=ready pod --selector=app.kubernetes.io/name=portainer --timeout=180s
+
 kubectl create -k ./monitoring/prometheus
 kubectl wait -n monitoring --for=condition=ready pod --selector=app.kubernetes.io/name=prometheus-operated
 
 kubectl create -k ./monitoring/grafana
 kubectl wait -n monitoring --for=condition=ready pod --selector=app.kubernetes.io/name=grafana --timeout=180s
 
+kubectl create -k ./monitoring/cadvisor
+kubectl wait -n monitoring --for=condition=ready pod --selector=app.kubernetes.io/name=cadvisor --timeout=240s
+
+kubectl create -k ./monitoring/kube-state-metrics
+kubectl wait -n monitoring --for=condition=ready pod --selector=app.kubernetes.io/name=kube-state-metrics --timeout=240s
+
+kubectl create -k ./monitoring/metrics-server
+kubectl wait -n kube-system --for=condition=ready pod --selector=app.kubernetes.io/name=metrics-server --timeout=240s
+
 kubectl create -k ./monitoring/elasticsearch
-kubectl wait -n elastic-system --for=condition=ready pod --selector=app.kubernetes.io/name=elastic-operator --timeout=180s
+kubectl wait -n elastic-system --for=condition=ready pod --selector=app.kubernetes.io/name=elastic-operator --timeout=600s
 
 kubectl create -k ./monitoring/jaeger-operator
-kubectl wait -n jaeger --for=condition=ready pod --selector=app.kubernetes.io/name=jaeger-operator --timeout=120s
+kubectl wait -n jaeger --for=condition=ready pod --selector=app.kubernetes.io/name=jaeger-operator --timeout=240s
 
 kubectl create -k ./traefik-ingress
 kubectl wait -n traefik --for=condition=ready pod --selector=app.kubernetes.io/name=traefik-ingress-controller --timeout=120s
 
-bash ./monitoring/jaeger/scripts/create_secrets.yml
+bash ./monitoring/jaeger/scripts/create_secrets.sh
 kubectl create -f ./monitoring/jaeger/traefik.yml
-kubect wait -n traefik --for=condition=ready pod --selector=name=jaeger-traefik --timeout=120s
+kubectl wait -n traefik --for=condition=ready pod --selector=app=jaeger-traefik --timeout=240s
+
+kubectl create -k ./jenkins
+kubectl wait -n jenkins --for=condition=ready pod --selector=app.kubernetes.io/name=jenkins --timeout=360s
