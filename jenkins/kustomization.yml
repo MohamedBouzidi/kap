@@ -6,6 +6,7 @@ commonLabels:
   app.kubernetes.io/part-of: jenkins
 resources:
 - namespace.yml
+- configmap.yml
 - rbac/serviceaccount.yml
 - service.yml
 - deployment.yml
