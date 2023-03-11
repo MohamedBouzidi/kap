@@ -56,6 +56,8 @@ spec:
               subPath: dashboardproviders.yml
             - name: nginx-dashboards
               mountPath: "/var/lib/grafana/dashboards/nginx"
+            - name: k8s-dashboards
+              mountPath: "/var/lib/grafana/dashboards/kubernetes"
             - name: storage
               mountPath: "/var/lib/grafana"
           ports:
@@ -99,5 +101,8 @@ spec:
         - name: nginx-dashboards
           configMap:  
             name: grafana-nginx-dashboards
+        - name: k8s-dashboards
+          configMap:
+            name: grafana-k8s-dashboards
         - name: storage
           emptyDir: {}

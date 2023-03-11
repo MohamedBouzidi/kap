@@ -15,6 +15,7 @@ metadata:
     cert-manager.io/issuer: "issuer"
     cert-manager.io/common-name: "grafana.dev.local"
 spec:
+  ingressClassName: nginx
   rules:
     - host: grafana.dev.local
       http:

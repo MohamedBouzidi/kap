@@ -46,3 +46,11 @@ data:
         path: /var/lib/grafana/dashboards/nginx
       orgId: 1
       type: file
+    - disableDeletion: false
+      editable: false
+      folder: Kubernetes
+      name: kubernetes
+      options:
+        path: /var/lib/grafana/dashboards/kubernetes
+      orgId: 1
+      type: file

@@ -6,3 +6,4 @@ commonLabels:
   app.kubernetes.io/part-of: grafana
 resources:
 - nginx-configmap.yaml
+- k8s-configmap.yml
