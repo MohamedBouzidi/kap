@@ -1,0 +1,26 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: jenkins-http
+  namespace: jenkins
+  annotations:
+    kubernetes.io/ingress.class: "nginx"    
+    nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
+    cert-manager.io/cluster-issuer: kap-vault-issuer
+    cert-manager.io/common-name: jenkins.dev.local
+spec:
+  rules:
+  - host: jenkins.dev.local
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: jenkins
+            port:
+              number: 8080
+  tls:
+  - hosts:
+    - jenkins.dev.local
+    secretName: jenkins-cert

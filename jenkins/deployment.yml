@@ -1,0 +1,58 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jenkins
+  namespace: jenkins
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: jenkins
+  template:
+    metadata:
+      labels:
+        app: jenkins
+        app.kubernetes.io/name: jenkins
+        app.kubernetes.io/part-of: jenkins
+    spec:
+      securityContext:
+        fsGroup: 1000
+        runAsUser: 1000
+      serviceAccountName: jenkins
+      containers:
+      - name: jenkins
+        image: jenkins/jenkins:lts
+        resources:
+          limits:
+            memory: "2Gi"
+            cpu: "2000m"
+          requests:
+            memory: "1Gi"
+            cpu: "500m"
+        ports:
+        - name: http
+          containerPort: 8080
+        - name: jnlp
+          containerPort: 50000
+        volumeMounts:
+        - name: jenkins-home
+          mountPath: /var/jenkins_home
+        livenessProbe:
+          httpGet:
+            path: "/login"
+            port: 8080
+          initialDelaySeconds: 300
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 5
+        readinessProbe:
+          httpGet:
+            path: "/login"
+            port: 8080
+          initialDelaySeconds: 360
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+      volumes:
+      - name: jenkins-home
+        emptyDir: {}
