@@ -36,11 +36,11 @@ kubectl create -k $SCRIPT_DIR/../consul
 
 echo
 
-while [ -n "$(kubectl get pods --selector app.kubernetes.io/name=consul --namespace vault > /dev/null 2>&1)" ]
+while [ -n "$(kubectl get pods --selector app.kubernetes.io/name=consul --selector component=server --namespace vault > /dev/null 2>&1)" ]
 do
     sleep 1
 done
-kubectl wait --namespace vault --for=condition=Ready --selector app.kubernetes.io/name=consul pod --timeout=300s > /dev/null 2>&1 &
+kubectl wait --namespace vault --for=condition=Ready --selector app.kubernetes.io/name=consul --selector component=server pod --timeout=300s > /dev/null 2>&1 &
 pid=$!
 
 loading $pid "Waiting for Consul to be ready"
@@ -57,7 +57,7 @@ while [ "$(kubectl get statefulset/vault -n vault -o jsonpath='{.status.availabl
 do
     sleep 1
 done
-kubectl wait --namespace vault --for=condition=Ready --selector app.kubernetes.io/name=vault pod --timeout=300s > /dev/null 2>&1 &
+kubectl wait --namespace vault --for=condition=Ready --selector app.kubernetes.io/name=vault --selector component=server pod --timeout=300s > /dev/null 2>&1 &
 pid=$!
 
 loading $pid "Waiting for Vault to be ready"
