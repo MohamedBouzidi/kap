@@ -9,5 +9,6 @@ resources:
 - configmap.yml
 - rbac/serviceaccount.yml
 - service.yml
+- servicemonitor.yml
 - deployment.yml
 - ingress.yml

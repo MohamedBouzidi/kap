@@ -3,14 +3,18 @@ kind: Service
 metadata:
   name: jenkins
   namespace: jenkins
-  annotations:
-    prometheus.io/scrape: 'true'
-    prometheus.io/path: /
-    prometheus.io/port: '8080'
+  labels:
+    app: jenkins-controller-metrics
 spec:
   selector:
     app: jenkins
   type: ClusterIP
   ports:
-  - port: 8080
-    targetPort: 8080
+  - name: http
+    port: 8080
+    targetPort: http
+    protocol: TCP
+  - name: jnlp
+    port: 50000
+    targetPort: jnlp
+    protocol: TCP

@@ -58,6 +58,8 @@ spec:
               mountPath: "/var/lib/grafana/dashboards/nginx"
             - name: k8s-dashboards
               mountPath: "/var/lib/grafana/dashboards/kubernetes"
+            - name: jenkins-dashboards
+              mountPath: "/var/lib/grafana/dashboards/jenkins"
             - name: storage
               mountPath: "/var/lib/grafana"
           ports:
@@ -104,5 +106,8 @@ spec:
         - name: k8s-dashboards
           configMap:
             name: grafana-k8s-dashboards
+        - name: jenkins-dashboards
+          configMap:
+            name: grafana-jenkins-dashboards
         - name: storage
           emptyDir: {}

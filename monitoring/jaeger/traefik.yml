@@ -24,6 +24,8 @@ spec:
           tls:
             ca: /es/certificates/ca.crt
       secretName: jaeger-es-secret
+  ingress:
+    enabled: false
   volumeMounts:
   - name: certificates
     mountPath: /es/certificates

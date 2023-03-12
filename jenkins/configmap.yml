@@ -12,6 +12,7 @@ data:
     workflow-aggregator:596.v8c21c963d92d
     configuration-as-code:1569.vb_72405b_80249
     kubernetes:3893.v73d36f3b_9103
+    prometheus:2.1.1
   casc: |
     jenkins:
       systemMessage: "Jenkins configured automatically by Jenkins Configuration as Code plugin\n\n"
@@ -27,7 +28,13 @@ data:
       clouds:
       - kubernetes:
           name: kubernetes
-          containerCapStr: 100
+          jenkinsUrl: "http://jenkins:8080/"
+          jenkinsTunnel: "jenkins:50000"
+          containerCapStr: 42
+          maxRequestsPerHostStr: 64
+          retentionTimeout: 5
+          connectTimeout: 10
+          readTimeout: 20
           templates:
             - name: maven
               label: mavenpodtemplate
@@ -39,4 +46,4 @@ data:
                 args: ""
     unclassified:
       location:
-        url: http://jenkins/
+        url: http://jenkins:8080/

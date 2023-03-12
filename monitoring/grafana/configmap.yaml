@@ -54,3 +54,11 @@ data:
         path: /var/lib/grafana/dashboards/kubernetes
       orgId: 1
       type: file
+    - disableDeletion: false
+      editable: false
+      folder: Jenkins
+      name: jenkins
+      options:
+        path: /var/lib/grafana/dashboards/jenkins
+      orgId: 1
+      type: file
