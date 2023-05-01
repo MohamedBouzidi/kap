@@ -20,6 +20,8 @@ metadata:
     nginx.ingress.kubernetes.io/proxy-connect-timeout: "15"
     cert-manager.io/issuer: "gitlab-issuer"
     cert-manager.io/common-name: "gitlab.dev.local"
+    cert-manager.io/private-key-algorithm: "ECDSA"
+    cert-manager.io/private-key-size: "256"
     nginx.ingress.kubernetes.io/service-upstream: "true"
 spec:
   
