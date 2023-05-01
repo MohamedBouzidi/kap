@@ -70,3 +70,5 @@ delete_token
 delete_user
 delete_project
 delete_group
+
+kubectl delete namespace/${NAMESPACE}

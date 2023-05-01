@@ -11,6 +11,8 @@ kubectl wait -n monitoring --for=condition=ready pod --selector=app.kubernetes.i
 kubectl create -k ./ingress-nginx
 kubectl wait -n ingress-nginx --for=condition=ready pod --selector=app.kubernetes.io/component=controller --timeout=240s
 
+bash ./external-dns/install.sh
+
 kubectl apply -f dashboard/recommended.yaml
 echo
 echo "DASHBOARD TOKEN:"
@@ -44,7 +46,7 @@ kubectl create -k ./monitoring/elasticsearch
 kubectl wait -n elastic-system --for=condition=ready pod --selector=app.kubernetes.io/name=elastic-operator --timeout=600s
 
 kubectl create -k ./monitoring/jaeger-operator
-kubectl wait -n jaeger --for=condition=ready pod --selector=app.kubernetes.io/name=jaeger-operator --timeout=240s
+kubectl wait -n jaeger --for=condition=ready pod --selector=app.kubernetes.io/name=jaeger-operator --timeout=600s
 
 kubectl create -k ./traefik-ingress
 kubectl wait -n traefik --for=condition=ready pod --selector=app.kubernetes.io/name=traefik-ingress-controller --timeout=120s
