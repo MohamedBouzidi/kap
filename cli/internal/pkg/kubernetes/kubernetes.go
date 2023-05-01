@@ -79,7 +79,5 @@ func ReadYamlFile(filename string) []runtime.Object {
 		resources = append(resources, obj)
 	}
 
-	log.Print(resources)
-
 	return resources
 }

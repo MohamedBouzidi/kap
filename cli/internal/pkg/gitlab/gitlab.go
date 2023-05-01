@@ -139,19 +139,47 @@ func CreateUser(userName string, userEmail string, userPassword string, groupID 
 	log.Printf("Member created: %d", member.ID)
 }
 
+func findGroupByName(groupName string) (id int) {
+	git, err := createGitlabClient()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// Find group
+	groups, response, err := git.Groups.SearchGroup(groupName)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	if response.StatusCode != 200 {
+		log.Fatal("Could not find group with name %s: %d", groupName, response.StatusCode)
+	}
+
+	if len(groups) > 1 {
+		log.Fatal("Found more than one group with name %s", groupName)
+	}
+
+	return groups[0].ID
+}
+
 func DeleteGroup(groupName string) {
 	git, err := createGitlabClient()
 	if err != nil {
 		log.Fatal(err)
 	}
 
+	groupId := findGroupByName(groupName)
+
 	// Delete group
-	response, err := git.Groups.DeleteGroup(*gitlab.String(groupName))
+	log.Printf("Deleting Group: %s (%d)...", groupName, groupId)
+	response, err := git.Groups.DeleteGroup(*gitlab.Int(groupId))
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	log.Printf("Group deleted: %v", response)
+	if response.StatusCode == http.StatusAccepted {
+		log.Print("Group deleted")
+	}
 
 	// Delete group members
 	members, _, err := git.Groups.ListGroupMembers(groupName, nil)
@@ -181,10 +209,11 @@ func DeleteProject(projectName string) {
 	}
 
 	// Delete project
+	log.Printf("Deleting Project %s...", projectName)
 	response, err := git.Projects.DeleteProject(*gitlab.String(projectName + "/" + projectName))
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	log.Printf("Project deleted: %v", response)
+	log.Printf("Project deleted: %d", response.StatusCode)
 }
