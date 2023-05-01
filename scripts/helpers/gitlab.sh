@@ -1,0 +1,269 @@
+#!/bin/env bash
+
+
+function display_help() {
+	echo "Usage: $0 [subcommand]" >&2
+	echo
+	echo "   create_group       Create new Gitlab group"
+	echo "   delete_group       Delete Gitlab group"
+	echo "   create_repo        Create new Gitlab repo in group"
+	echo "   delete_repo        Delete Gitlab repo from group"
+	exit 1
+}
+
+function auth() { 
+    local GITLAB_HOST=$1
+
+	export PASSWORD=$(kubectl get secret/gitlab-gitlab-initial-root-password -n gitlab -o jsonpath='{.data.password}' | base64 -d)
+	export TOKEN=$(curl -k -s -X POST -H "Content-Type: application/json" -d "{\"grant_type\":\"password\",\"username\":\"root\",\"password\":\"$PASSWORD\"}" "https://$GITLAB_HOST/oauth/token" | jq -r ".access_token")
+	export AUTH_HEADER="Authorization: Bearer $TOKEN"
+}
+
+function create_group() {
+    local GITLAB_HOST=$1
+    local GROUP_NAME=$2
+
+	export GROUP_ID=$(curl -k -s -X POST -H "$AUTH_HEADER" -H "Content-Type: application/json" \
+			-d "{\"name\":\"$GROUP_NAME\",\"path\":\"$GROUP_NAME\"}" \
+			"https://$GITLAB_HOST/api/v4/groups/" | jq -r ".id")
+}
+
+function create_namespace() {
+    local NAMESPACE=$1
+
+	kubectl get namespace/${NAMESPACE} > /dev/null 2>&1 || kubectl create namespace ${NAMESPACE}
+}
+
+function create_user() {
+    local GITLAB_HOST=$1
+    local GROUP_NAME=$2
+
+	local ADMIN_USERNAME="${GROUP_NAME}-admin"
+	local ADMIN_PASSWORD="${GROUP_NAME}"
+	local ADMIN_EMAIL="admin@${GROUP_NAME}.dev"
+
+	export USER_ID=$(curl -k -s -X POST -H "$AUTH_HEADER" -H "Content-Type: application/json" \
+			-d "{\"email\":\"${ADMIN_EMAIL}\",\"name\":\"${ADMIN_USERNAME}\",\"username\":\"${ADMIN_USERNAME}\",\"skip_confirmation\":\"true\",\"password\":\"${ADMIN_PASSWORD}\"}" \
+			"https://$GITLAB_HOST/api/v4/users/" | jq -r ".id")
+	curl -k -s -X POST -H "$AUTH_HEADER" -H "Content-Type: application/json" \
+		-d "{\"id\":\"$GROUP_ID\",\"user_id\":\"$USER_ID\",\"access_level\":\"50\"}" \
+		"https://$GITLAB_HOST/api/v4/groups/$GROUP_ID/members" > /dev/null 2>&1
+	kubectl create configmap gitlab-admin --from-literal=username=${ADMIN_USERNAME} --from-literal=password=${ADMIN_PASSWORD} --from-literal=email=${ADMIN_EMAIL} --namespace ${GROUP_NAME}
+}
+
+function create_project() {
+    local GITLAB_HOST=$1
+    local GROUP_NAME=$2
+    local REPO_NAME=$3
+
+    GROUP_ID=$(curl -k -s -X GET -H "$AUTH_HEADER" -H "Content-Type: application/json" \
+        "https://$GITLAB_HOST/api/v4/groups?search=${GROUP_NAME}" | jq -r ".[0].id")
+	NAMESPACE_ID=$(curl -k -s -X GET -H "$AUTH_HEADER" -H "Content-Type: application/json" \
+		"https://$GITLAB_HOST/api/v4/namespaces/$GROUP_ID" | jq -r ".id")
+	export PROJECT_ID=$(curl -k -s -X POST -H "$AUTH_HEADER" -H "Content-Type: application/json" \
+			-d "{\"name\":\"$REPO_NAME\",\"description\":\"Description for $REPO_NAME\",\"path\":\"$REPO_NAME\",\"namespace_id\":\"$NAMESPACE_ID\",\"initialize_with_readme\":\"true\"}" \
+			"https://$GITLAB_HOST/api/v4/projects" | jq -r ".id")
+}
+
+function create_access_token() {
+    local GITLAB_HOST=$1
+    local GROUP_NAME=$2
+    local REPO_NAME=$3
+    local DOCKER_REGISTRY="registry.dev.local"
+
+    USERNAME="${REPO_NAME}_regcrd_token"
+	PROJECT_TOKEN=$(curl -k -s -X POST -H "$AUTH_HEADER" -H "Content-Type: application/json" \
+		-d "{ \"name\":\"${USERNAME}\", \"scopes\":[\"api\", \"read_registry\", \"write_registry\"], \"expires_at\":\"2026-01-31\", \"access_level\": 50 }" \
+		"https://$GITLAB_HOST/api/v4/projects/${PROJECT_ID}/access_tokens" | jq -r ".token")
+	kubectl create secret generic ${REPO_NAME}-gitlab-registry-token --from-literal=token=$PROJECT_TOKEN -n $GROUP_NAME
+    kubectl create secret docker-registry ${REPO_NAME}-regcred --docker-server=https://${DOCKER_REGISTRY}/${GROUP_NAME} --docker-username $USERNAME --docker-password $PROJECT_TOKEN -n $GROUP_NAME
+}
+
+function create_deploy_token() {
+    local GITLAB_HOST=$1
+    local GROUP_NAME=$2
+    local REPO_NAME=$3
+
+    PROJECT_TOKEN=$(curl -k -s -X POST -H "$AUTH_HEADER" -H "Content-Type: application/json" \
+        -d "{ \"name\":\"${REPO_NAME}_argocd_token\", \"scopes\":[\"read_repository\"], \"expires_at\":\"2026-01-31\", \"username\": \"${REPO_NAME}_argocd_token\" }" \
+        "https://$GITLAB_HOST/api/v4/projects/${PROJECT_ID}/deploy_tokens" | jq -r ".token")
+    kubectl create secret generic ${REPO_NAME}-gitlab-argocd-token --from-literal=token=$PROJECT_TOKEN -n ${GROUP_NAME}
+}
+
+function delete_group() {
+    local GITLAB_HOST=$1
+    local GROUP_NAME=$2
+
+    GROUP_ID=$(curl -k -s -X GET -H "$AUTH_HEADER" -H "Content-Type: application/json" \
+        "https://$GITLAB_HOST/api/v4/groups?search=${GROUP_NAME}" | jq -r ".[0].id")
+	curl -k -s -X DELETE -H "$AUTH_HEADER" "https://$GITLAB_HOST/api/v4/groups/$GROUP_ID" > /dev/null 2>&1
+}
+
+function delete_namespace() {
+    local GROUP_NAME=$1
+
+	kubectl get namespace/${GROUP_NAME} > /dev/null 2>&1 && kubectl delete namespace ${GROUP_NAME}
+}
+
+function delete_user() {
+    local GITLAB_HOST=$1
+    local GROUP_NAME=$2
+
+    GROUP_ID=$(curl -k -s -X GET -H "$AUTH_HEADER" -H "Content-Type: application/json" \
+        "https://${GITLAB_HOST}/api/v4/groups?search=${GROUP_NAME}" | jq -r ".[0].id")
+	GROUP_MEMBERS=$(curl -k -s -X GET -H "$AUTH_HEADER" -H "Content-Type: application/json" "https://${GITLAB_HOST}/api/v4/groups/${GROUP_ID}/members")
+    for member in $(echo $GROUP_MEMBERS | jq -r '.[] | @base64')
+    do
+        USER_ID=$(echo $member | base64 -d | jq -r '.id')
+        if [ "$USER_ID" != "1" ]
+        then
+            echo Deleting USER ID: $USER_ID...
+            curl -k -s -X DELETE -H "$AUTH_HEADER" "https://${GITLAB_HOST}/api/v4/users/${USER_ID}"
+        fi
+    done
+}
+
+function delete_project() {
+    local GITLAB_HOST=$1
+    local REPO_NAME=$2
+
+    PROJECT_ID=$(curl -k -s -X GET -H "$AUTH_HEADER" -H "Content-Type: application/json" \
+        "https://${GITLAB_HOST}/api/v4/projects?search=${REPO_NAME}" | jq -r ".[0].id")
+    curl -k -s -X DELETE -H "$AUTH_HEADER" -H "Content-Type: application/json" "https://${GITLAB_HOST}/api/v4/projects/${PROJECT_ID}?permanently_remove=true" > /dev/null 2>&1
+}
+
+function delete_access_token() {
+    local GROUP_NAME=$1
+    local REPO_NAME=$2
+
+	kubectl delete secret/${REPO_NAME}-gitlab-registry-token --namespace ${GROUP_NAME}
+    kubectl delete secret/${REPO_NAME}-regcred --namespace ${GROUP_NAME}
+}
+
+function delete_deploy_token() {
+    local GROUP_NAME=$1
+    local REPO_NAME=$2
+
+	kubectl delete secret/${REPO_NAME}-gitlab-argocd-token --namespace ${GROUP_NAME}
+}
+
+############################################
+
+[ "$#" -lt 1 ] && display_help
+
+SUBCOMMAND=$1
+shift
+
+case "$SUBCOMMAND" in
+    
+    "create_group" )
+        if [ "$#" -lt 4 ]; then
+            echo "Usage: bash ./gitlab.sh create_group [option...]" >&2
+            echo
+            echo "   -g, --gitlab-host          Gitlab host"
+            echo "   -p, --group-name           Gitlab group name"
+            echo "   -h, --help                 Show help message"
+            exit 1
+        fi
+        VALID_ARGS=$(getopt -o g:p:h --long gitlab-host:,group-name:,help -- "$@")
+        eval set -- "$VALID_ARGS"
+        while [ : ]; do
+            case "$1" in
+                -h | --help        )    display_help ;;
+                -g | --gitlab-host )    GITLAB_HOST="$2"; shift 2 ;;
+                -p | --group-name  )    GROUP_NAME="$2"; shift 2 ;;
+                -- ) shift; break ;;
+                * ) break ;;
+            esac
+        done
+        auth $GITLAB_HOST
+        create_group $GITLAB_HOST $GROUP_NAME
+        create_namespace $GROUP_NAME
+        create_user $GITLAB_HOST $GROUP_NAME
+        ;;
+
+
+    "create_repo" )
+        if [ "$#" -lt 6 ]; then
+            echo "Usage: bash ./gitlab.sh create_repo [option...]" >&2
+            echo
+            echo "   -g, --gitlab-host          Gitlab host"
+            echo "   -p, --group-name           Gitlab group name"
+            echo "   -r, --repo-name            Gitlab repo name"
+            echo "   -h, --help                 Show help message"
+            exit 1
+        fi
+        VALID_ARGS=$(getopt -o g:p:r:h --long gitlab-host:,group-name:,repo-name:,help -- "$@")
+        eval set -- "$VALID_ARGS"
+        while [ : ]; do
+            case "$1" in
+                -h | --help        )    display_help ;;
+                -g | --gitlab-host )    GITLAB_HOST="$2"; shift 2 ;;
+                -p | --group-name  )    GROUP_NAME="$2"; shift 2 ;;
+                -r | --repo-name   )    REPO_NAME="$2"; shift 2 ;;
+                -- ) shift; break ;;
+                * ) break ;;
+            esac
+        done
+        auth $GITLAB_HOST
+        create_project $GITLAB_HOST $GROUP_NAME $REPO_NAME
+        create_access_token $GITLAB_HOST $GROUP_NAME $REPO_NAME
+        create_deploy_token $GITLAB_HOST $GROUP_NAME $REPO_NAME
+        ;;
+
+
+    "delete_group" )
+        if [ "$#" -lt 4 ]; then
+            echo "Usage: bash ./gitlab.sh delete_group [option...]" >&2
+            echo
+            echo "   -g, --gitlab-host          Gitlab host"
+            echo "   -p, --group-name           Gitlab group name"
+            echo "   -h, --help                 Show help message"
+            exit 1
+        fi
+        VALID_ARGS=$(getopt -o g:p:h --long gitlab-host:,group-name:,help -- "$@")
+        eval set -- "$VALID_ARGS"
+        while [ : ]; do
+            case "$1" in
+                -h | --help        )    display_help ;;
+                -g | --gitlab-host )    GITLAB_HOST="$2"; shift 2 ;;
+                -p | --group-name  )    GROUP_NAME="$2"; shift 2 ;;
+                -- ) shift; break ;;
+                * ) break ;;
+            esac
+        done
+        auth $GITLAB_HOST
+        delete_namespace $GROUP_NAME
+        delete_user $GITLAB_HOST $GROUP_NAME
+        delete_group $GITLAB_HOST $GROUP_NAME
+        ;;
+
+
+    "delete_repo" )
+        if [ "$#" -lt 6 ]; then
+            echo "Usage: bash ./gitlab.sh delete_repo [option...]" >&2
+            echo
+            echo "   -g, --gitlab-host          Gitlab host"
+            echo "   -p, --group-name           Gitlab group name"
+            echo "   -r, --repo-name            Gitlab repo name"
+            echo "   -h, --help                 Show help message"
+            exit 1
+        fi
+        VALID_ARGS=$(getopt -o g:p:r:h --long gitlab-host:,group-name:,repo-name:,help -- "$@")
+        eval set -- "$VALID_ARGS"
+        while [ : ]; do
+            case "$1" in
+                -h | --help        )    display_help ;;
+                -g | --gitlab-host )    GITLAB_HOST="$2"; shift 2 ;;
+                -p | --group-name  )    GROUP_NAME="$2"; shift 2 ;;
+                -r | --repo-name   )    REPO_NAME="$2"; shift 2 ;;
+                -- ) shift; break ;;
+                * ) break ;;
+            esac
+        done
+        auth $GITLAB_HOST
+        delete_project $GITLAB_HOST $REPO_NAME
+        delete_access_token $GROUP_NAME $REPO_NAME
+        delete_deploy_token $GROUP_NAME $REPO_NAME
+        ;;
+esac

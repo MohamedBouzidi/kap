@@ -18,3 +18,5 @@ echo NAMESPACE: $NAMESPACE
 kubectl delete secret/regcred --namespace $NAMESPACE
 kubectl delete secret/$APPLICATION-credentials --namespace argocd
 kubectl delete application/$APPLICATION --namespace argocd
+
+# bash scripts/uninstall_application.sh --application hello-proj --namespace default
