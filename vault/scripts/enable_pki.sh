@@ -12,11 +12,12 @@ vault secrets tune -max-lease-ttl=87600h pki
 
 vault write pki/root/generate/internal common_name=$DOMAIN ttl=8760h
 vault write pki/config/urls issuing_certificates=\"http://vault.vault:8200/v1/pki/ca\" crl_distribution_points=\"http://vault.vault:8200/v1/pki/crl\"
-vault write pki/roles/kap-domain allowed_domains=$DOMAIN allow_subdomains=true max_ttl=72h
+vault write pki/roles/kap-domain allowed_domains=$DOMAIN allow_subdomains=true allow_bare_domains=true max_ttl=72h key_type=ec
 vault policy write pki - <<EOF
-path \"pki*\"                  { capabilities = [\"read\", \"list\"] }
-path \"pki/sign/kap-domain\"   { capabilities = [\"create\", \"update\"] }
-path \"pki/issue/kap-domain\"  { capabilities = [\"create\"] }
+path \"pki*\"                               { capabilities = [\"read\", \"list\"] }
+path \"pki/sign/kap-domain\"                { capabilities = [\"create\", \"update\"] }
+path \"pki/sign-intermediate/kap-domain\"   { capabilities = [\"create\", \"update\"] }
+path \"pki/issue/kap-domain\"               { capabilities = [\"create\"] }
 EOF
 
 vault auth enable kubernetes
