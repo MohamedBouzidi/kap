@@ -99,22 +99,23 @@ case "$SUBCOMMAND" in
             echo
             echo "  -p, --project-name          ArgoCD project name"
             echo "  -n, --app-name              ArgoCD app name"
+            echo "  -m, --argo-path             YAML files path"
             echo "  -h, --help                  Show help message"
             exit 1
         fi
-        VALID_ARGS=$(getopt -o p:n:h --long project-name:,app-name:,help -- "$@")
+        VALID_ARGS=$(getopt -o p:n:m:h --long project-name:,app-name:,argo-path:,help -- "$@")
         eval set -- "$VALID_ARGS"
         while [ : ]; do
             case "$1" in
                 -h | --help         )   display_help ;;
                 -p | --project-name )   export PROJECT_NAME="$2"; shift 2 ;;
                 -n | --app-name     )   export APP_NAME="$2"; shift 2 ;;
+                -m | --argo-path    )   export ARGO_PATH="$2"; shift 2 ;;
                 -- ) shift; break ;;
                 * ) break ;;
             esac
         done
         export REPOSITORY="${GITLAB_HOST}/${PROJECT_NAME}/${APP_NAME}.git"
-        export ARGO_PATH="cd"
         export USERNAME="${APP_NAME}_argocd_token"
         export PASSWORD="$(kubectl get secret/${APP_NAME}-gitlab-argocd-token -o jsonpath='{.data.token}' --namespace ${PROJECT_NAME} | base64 -d)"
         envsubst < $TEMPLATES_DIR/application.yml | kubectl apply -f -

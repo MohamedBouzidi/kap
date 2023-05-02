@@ -8,6 +8,7 @@ function display_help() {
 	echo "   delete_group       Delete Gitlab group"
 	echo "   create_repo        Create new Gitlab repo in group"
 	echo "   delete_repo        Delete Gitlab repo from group"
+    echo "   commit_directory   Commit directory contents to repo"
 	exit 1
 }
 
@@ -61,7 +62,7 @@ function create_project() {
 	NAMESPACE_ID=$(curl -k -s -X GET -H "$AUTH_HEADER" -H "Content-Type: application/json" \
 		"https://$GITLAB_HOST/api/v4/namespaces/$GROUP_ID" | jq -r ".id")
 	export PROJECT_ID=$(curl -k -s -X POST -H "$AUTH_HEADER" -H "Content-Type: application/json" \
-			-d "{\"name\":\"$REPO_NAME\",\"description\":\"Description for $REPO_NAME\",\"path\":\"$REPO_NAME\",\"namespace_id\":\"$NAMESPACE_ID\",\"initialize_with_readme\":\"true\"}" \
+			-d "{\"name\":\"$REPO_NAME\",\"description\":\"Description for $REPO_NAME\",\"path\":\"$REPO_NAME\",\"namespace_id\":\"$NAMESPACE_ID\",\"initialize_with_readme\":\"false\"}" \
 			"https://$GITLAB_HOST/api/v4/projects" | jq -r ".id")
 }
 
@@ -145,6 +146,26 @@ function delete_deploy_token() {
     local REPO_NAME=$2
 
 	kubectl delete secret/${REPO_NAME}-gitlab-argocd-token --namespace ${GROUP_NAME}
+}
+
+function commit_directory() {
+    local GITLAB_HOST=$1
+    local GROUP_NAME=$2
+    local REPO_NAME=$3
+    local DIRECTORY=$4
+    local PAYLOAD='{"branch": "main", "commit_message": "Initial Commit", "actions": []}'
+
+    for f in $(find $DIRECTORY -type f)
+    do
+        filename=$(echo $f | awk -F"$DIRECTORY/" '{print $2}')
+        PAYLOAD=$(echo $PAYLOAD | jq -r --arg filename "$filename" --rawfile content $DIRECTORY/$filename '.actions[.actions | length] |= . + {"action":"create","file_path":$filename,"content":($content | @base64),"encoding":"base64"}')
+    done
+
+    GROUP_ID=$(curl -k -s -X GET -H "$AUTH_HEADER" -H "Content-Type: application/json" \
+        "https://${GITLAB_HOST}/api/v4/groups?search=${GROUP_NAME}" | jq -r ".[0].id")
+    PROJECT_ID=$(curl -k -s -X GET -H "$AUTH_HEADER" -H "Content-Type: application/json" \
+        "https://${GITLAB_HOST}/api/v4/groups/${GROUP_ID}/projects?search=${REPO_NAME}" | jq -r ".[0].id")
+    curl -k -s -X POST -H "$AUTH_HEADER" -H "Content-Type: application/json" -d "$PAYLOAD" "https://${GITLAB_HOST}/api/v4/projects/${PROJECT_ID}/repository/commits" > /dev/null 2>&1
 }
 
 ############################################
@@ -265,5 +286,33 @@ case "$SUBCOMMAND" in
         delete_project $GITLAB_HOST $REPO_NAME
         delete_access_token $GROUP_NAME $REPO_NAME
         delete_deploy_token $GROUP_NAME $REPO_NAME
+        ;;
+
+    "commit_directory" )
+        if [ "$#" -lt 8 ]; then
+            echo "Usage: bash ./gitlab.sh delete_repo [option...]" >&2
+            echo
+            echo "   -g, --gitlab-host          Gitlab host"
+            echo "   -p, --group-name           Gitlab group name"
+            echo "   -r, --repo-name            Gitlab repo name"
+            echo "   -d, --directory            Directory to commit"
+            echo "   -h, --help                 Show help message"
+            exit 1
+        fi
+        VALID_ARGS=$(getopt -o g:p:r:d:h --long gitlab-host:,group-name:,repo-name:,directory:,help -- "$@")
+        eval set -- "$VALID_ARGS"
+        while [ : ]; do
+            case "$1" in
+                -h | --help        )    display_help ;;
+                -g | --gitlab-host )    GITLAB_HOST="$2"; shift 2 ;;
+                -p | --group-name  )    GROUP_NAME="$2"; shift 2 ;;
+                -r | --repo-name   )    REPO_NAME="$2"; shift 2 ;;
+                -d | --directory   )    DIRECTORY="$2"; shift 2 ;;
+                -- ) shift; break ;;
+                * ) break ;;
+            esac
+        done
+        auth $GITLAB_HOST
+        commit_directory $GITLAB_HOST $GROUP_NAME $REPO_NAME $DIRECTORY
         ;;
 esac

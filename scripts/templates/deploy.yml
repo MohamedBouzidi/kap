@@ -1,38 +1,38 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: test-repo
-  namespace: test-group
+  name: ${APP_NAME}
+  namespace: ${PROJECT_NAME}
   labels:
-    app: test-repo
+    app: ${APP_NAME}
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: test-repo
+      app: ${APP_NAME}
   template:
     metadata:
       labels:
-        app: test-repo
+        app: ${APP_NAME}
     spec:
       containers:
         - name: app
-          image: registry.dev.local/test-group/test-repo:latest
+          image: registry.dev.local/${PROJECT_NAME}/${APP_NAME}:latest
           ports:
           - containerPort: 8090
             protocol: TCP
             name: web
       imagePullSecrets:
-      - name: test-repo-regcred
+      - name: ${APP_NAME}-regcred
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: test-repo
-  namespace: app-ingress
+  name: ${APP_NAME}-service
+  namespace: ${PROJECT_NAME}
 spec:
   selector:
-    app: test-repo
+    app: ${APP_NAME}
   ports:
   - name: web
     port: 8090
@@ -41,18 +41,18 @@ spec:
 apiVersion: traefik.containo.us/v1alpha1
 kind: Middleware
 metadata:
-  name: test-repo
+  name: ${APP_NAME}-middleware
   namespace: app-ingress
 spec:
   stripPrefix:
     prefixes:
-      - "/test-repo"
+      - "/${APP_NAME}"
     forceSlash: true
 ---
 apiVersion: traefik.containo.us/v1alpha1
 kind: IngressRoute
 metadata:
-  name: test-repo
+  name: ${APP_NAME}-ingress
   namespace: app-ingress
   annotations:
     kubernetes.io/ingress.class: "traefik-ingress"
@@ -61,12 +61,12 @@ spec:
   - websecure
   routes:
     - kind: Rule
-      match: PathPrefix(`/test-repo`)
+      match: PathPrefix(`/${APP_NAME}`)
       middlewares:
-      - name: test-repo
+      - name: ${APP_NAME}-middleware
         namespace: app-ingress
       services:
-      - name: test-repo
-        namespace: app-ingress
+      - name: ${APP_NAME}-service
+        namespace: ${PROJECT_NAME}
         port: web
   tls: {}
