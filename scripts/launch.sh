@@ -42,18 +42,8 @@ kubectl wait -n kube-system --for=condition=ready pod --selector=app.kubernetes.
 kubectl create -k ./monitoring/node-exporter
 kubectl wait -n kube-system --for=condition=ready pod --selector=app.kubernetes.io/name=node-exporter --timeout=240s
 
-kubectl create -k ./monitoring/elasticsearch
-kubectl wait -n elastic-system --for=condition=ready pod --selector=app.kubernetes.io/name=elastic-operator --timeout=600s
-
-kubectl create -k ./monitoring/jaeger-operator
-kubectl wait -n jaeger --for=condition=ready pod --selector=app.kubernetes.io/name=jaeger-operator --timeout=600s
-
 kubectl create -k ./traefik-ingress
 kubectl wait -n traefik --for=condition=ready pod --selector=app.kubernetes.io/name=traefik-ingress-controller --timeout=120s
-
-bash ./monitoring/jaeger/scripts/create_secrets.sh
-kubectl create -f ./monitoring/jaeger/traefik.yml
-kubectl wait -n traefik --for=condition=ready pod --selector=app=jaeger-traefik --timeout=240s
 
 kubectl create -k ./jenkins
 kubectl wait -n jenkins --for=condition=ready pod --selector=app.kubernetes.io/name=jenkins --timeout=360s

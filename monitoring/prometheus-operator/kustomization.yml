@@ -5,7 +5,6 @@ commonLabels:
   app.kubernetes.io/name: prometheus-operator
   app.kubernetes.io/part-of: prometheus
 resources:
-- namespace.yml
 - crds/
 - rbac/
 - deployment.yml

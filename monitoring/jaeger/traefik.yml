@@ -13,14 +13,20 @@ spec:
       limits:
         cpu: 100m
         memory: 128Mi
+  query:
+    metricsStorage:
+      type: prometheus
+    options:
+      prometheus:
+        server-url: "http://prometheus-operated.monitoring.svc:9090"
   storage:
       type: elasticsearch
       options:
         es:
           server-urls: https://kap-elastic-es-http.elastic-system.svc:9200
-          index-prefix: traefik
+          index-prefix: traefik_
           version: 7
-          create-index-templates: false
+          # create-index-templates: false
           tls:
             ca: /es/certificates/ca.crt
       secretName: jaeger-es-secret

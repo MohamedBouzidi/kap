@@ -4,7 +4,7 @@ metadata:
   name: kap-elastic
   namespace: elastic-system
 spec:
-  version: 7.17.0
+  version: 7.17.10
   nodeSets:
   - name: default
     count: 3
@@ -17,7 +17,7 @@ metadata:
   name: kap-elastic
   namespace: elastic-system
 spec:
-  version: 7.17.0
+  version: 7.17.10
   count: 1
   elasticsearchRef:
     name: kap-elastic
