@@ -1,0 +1,26 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: sonarqube
+  namespace: sonarqube
+  annotations:
+    nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
+    cert-manager.io/cluster-issuer: kap-vault-issuer
+    cert-manager.io/common-name: sonarqube.dev.local
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: sonarqube.dev.local
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: sonarqube
+            port:
+              number: 9000
+  tls:
+  - hosts:
+    - sonarqube.dev.local
+    secretName: sonarqube-cert
