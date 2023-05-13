@@ -10,7 +10,6 @@ metadata:
     chart: minio-0.4.3
     release: gitlab
     heritage: Helm
-    
   annotations:
     kubernetes.io/ingress.class: nginx
     kubernetes.io/ingress.provider: "nginx"
@@ -21,7 +20,7 @@ metadata:
     cert-manager.io/issuer: "gitlab-issuer"
     cert-manager.io/common-name: "minio.dev.local"
 spec:
-  
+  ingressClassName: nginx
   rules:
     - host: minio.dev.local
       http:

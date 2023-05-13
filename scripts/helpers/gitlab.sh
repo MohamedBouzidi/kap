@@ -6,8 +6,11 @@ function display_help() {
 	echo
 	echo "   create_group       Create new Gitlab group"
 	echo "   delete_group       Delete Gitlab group"
+    echo "   list_groups        List all groups"
+    echo "   clear_group        Remove all repos in group"
 	echo "   create_repo        Create new Gitlab repo in group"
 	echo "   delete_repo        Delete Gitlab repo from group"
+    echo "   list_repos         List all repos in group"
     echo "   commit_directory   Commit directory contents to repo"
 	exit 1
 }
@@ -148,6 +151,36 @@ function delete_deploy_token() {
 	kubectl delete secret/${REPO_NAME}-gitlab-argocd-token --namespace ${GROUP_NAME}
 }
 
+function list_groups() {
+    local GITLAB_HOST=$1
+
+    curl -k -s -X GET -H "$AUTH_HEADER" -H "Content-Type: application/json" "https://${GITLAB_HOST}/api/v4/groups" | jq -r 'map(.name) | join("\n")'
+}
+
+function list_repos() {
+    local GITLAB_HOST=$1
+    local GROUP_NAME=$2
+
+    GROUP_ID=$(curl -k -s -X GET -H "$AUTH_HEADER" -H "Content-Type: application/json" \
+        "https://${GITLAB_HOST}/api/v4/groups?search=${GROUP_NAME}" | jq -r ".[0].id")
+    curl -k -s -X GET -H "$AUTH_HEADER" -H "Content-Type: application/json" "https://${GITLAB_HOST}/api/v4/groups/${GROUP_ID}/projects" | jq -r 'map(.name) | join("\n")'
+}
+
+function clear_group() {
+    local GITLAB_HOST=$1
+    local GROUP_NAME=$2
+
+    repos=$(list_repos $GITLAB_HOST $GROUP_NAME | tr '\n' ' ')
+    for repo in $repos
+    do
+        echo Deleting repo $repo
+        delete_project $GITLAB_HOST $repo
+        delete_access_token $GROUP_NAME $repo
+        delete_deploy_token $GROUP_NAME $repo
+        echo
+    done
+}
+
 function commit_directory() {
     local GITLAB_HOST=$1
     local GROUP_NAME=$2
@@ -286,6 +319,76 @@ case "$SUBCOMMAND" in
         delete_project $GITLAB_HOST $REPO_NAME
         delete_access_token $GROUP_NAME $REPO_NAME
         delete_deploy_token $GROUP_NAME $REPO_NAME
+        ;;
+
+    "list_groups" )
+        if [ "$#" -lt 2 ]; then
+            echo "Usage: bash ./gitlab.sh list_groups [option...]" >&2
+            echo
+            echo "   -g, --gitlab-host          Gitlab host"
+            echo "   -h, --help                 Show help message"
+            exit 1
+        fi
+        VALID_ARGS=$(getopt -o g:h --long gitlab-host:,help -- "$@")
+        eval set -- "$VALID_ARGS"
+        while [ : ]; do
+            case "$1" in
+                -h | --help        )    display_help ;;
+                -g | --gitlab-host )    GITLAB_HOST="$2"; shift 2 ;;
+                -- ) shift; break ;;
+                * ) break ;;
+            esac
+        done
+        auth $GITLAB_HOST
+        list_groups $GITLAB_HOST
+        ;;
+
+    "list_repos" )
+        if [ "$#" -lt 4 ]; then
+            echo "Usage: bash ./gitlab.sh list_repos [option...]" >&2
+            echo
+            echo "   -g, --gitlab-host          Gitlab host"
+            echo "   -p, --group-name           Gitlab group name"
+            echo "   -h, --help                 Show help message"
+            exit 1
+        fi
+        VALID_ARGS=$(getopt -o g:p:h --long gitlab-host:,group-name:,help -- "$@")
+        eval set -- "$VALID_ARGS"
+        while [ : ]; do
+            case "$1" in
+                -h | --help        )    display_help ;;
+                -g | --gitlab-host )    GITLAB_HOST="$2"; shift 2 ;;
+                -p | --group-name  )    GROUP_NAME="$2"; shift 2 ;;
+                -- ) shift; break ;;
+                * ) break ;;
+            esac
+        done
+        auth $GITLAB_HOST
+        list_repos $GITLAB_HOST $GROUP_NAME
+        ;;
+
+    "clear_group" )
+        if [ "$#" -lt 4 ]; then
+            echo "Usage: bash ./gitlab.sh clear_group [option...]" >&2
+            echo
+            echo "   -g, --gitlab-host          Gitlab host"
+            echo "   -p, --group-name           Gitlab group name"
+            echo "   -h, --help                 Show help message"
+            exit 1
+        fi
+        VALID_ARGS=$(getopt -o g:p:h --long gitlab-host:,group-name:,help -- "$@")
+        eval set -- "$VALID_ARGS"
+        while [ : ]; do
+            case "$1" in
+                -h | --help        )    display_help ;;
+                -g | --gitlab-host )    GITLAB_HOST="$2"; shift 2 ;;
+                -p | --group-name  )    GROUP_NAME="$2"; shift 2 ;;
+                -- ) shift; break ;;
+                * ) break ;;
+            esac
+        done
+        auth $GITLAB_HOST
+        clear_group $GITLAB_HOST $GROUP_NAME
         ;;
 
     "commit_directory" )

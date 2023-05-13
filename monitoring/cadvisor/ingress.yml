@@ -9,6 +9,7 @@ metadata:
     cert-manager.io/issuer: "issuer"
     cert-manager.io/common-name: "cadvisor.dev.local"
 spec:
+  ingressClassName: nginx
   rules:
     - host: cadvisor.dev.local
       http:

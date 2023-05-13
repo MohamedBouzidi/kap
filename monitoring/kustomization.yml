@@ -8,4 +8,5 @@ resources:
 - kube-state-metrics/
 - kube-exporters/
 - node-exporter/
+- cadvisor/
 - grafana/

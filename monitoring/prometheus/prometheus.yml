@@ -8,6 +8,9 @@ spec:
   serviceMonitorSelector:
     matchLabels:
       prometheus: monitoring
+  podMonitorSelector:
+    matchLabels:
+      prometheus: monitoring
   resources:
     requests:
       memory: 400Mi

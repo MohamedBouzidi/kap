@@ -34,6 +34,32 @@ spec:
         runAsUser: 100
       terminationGracePeriodSeconds: 3600
       serviceAccountName: gitlab-gitlab-runner
+      initContainers:
+      - name: certificates
+        image: registry.gitlab.com/gitlab-org/build/cng/alpine-certificates:20191127-r2@sha256:367d437d024d7647432d67fb2442e3e5723af5930bad77d3535f4f8f4f8630d9
+        command: ["sh", "-c"]
+        args:
+          - |
+            echo Adding Gitlab CA to ca-certificates...
+            cat /usr/local/share/ca-certificates/ca.crt >> /etc/ssl/cert.pem
+            cat /usr/local/share/ca-certificates/ca.crt >> /etc/ssl/certs/ca-certificates.crt
+            echo Updating ca-certificates
+            update-ca-certificates
+            echo Copying /etc/ssl/certs...
+            cp -r /etc/ssl/* /tmp/ssl/
+        securityContext:
+          runAsUser: 0
+          allowPrivilegeEscalation: true
+        volumeMounts:
+        - name: etc-ssl-certs
+          mountPath: /tmp/ssl
+          readOnly: false
+        - name: custom-ca-certificates
+          mountPath: /usr/local/share/ca-certificates
+          readOnly: true
+        resources:
+          requests:
+            cpu: 50m
       containers:
       - name: gitlab-gitlab-runner
         image: registry.gitlab.com/gitlab-org/gitlab-runner:alpine-v15.6.0
@@ -46,10 +72,8 @@ spec:
           privileged: false
           readOnlyRootFilesystem: false
           runAsNonRoot: true
-        
         command: ["/usr/bin/dumb-init", "--", "/bin/bash", "/configmaps/entrypoint"]
         env:
-                
         - name: CI_SERVER_URL
           value: https://gitlab.dev.local
         - name: CLONE_URL
@@ -92,8 +116,19 @@ spec:
           mountPath: /configmaps
         - name: gitlab-ca
           mountPath: /home/gitlab-runner/.gitlab-runner/certs
+        - name: etc-ssl-certs
+          mountPath: /etc/ssl/
+          readOnly: true
+        - name: custom-ca-certificates
+          mountPath: /usr/local/share/ca-certificates
+          readOnly: true
         resources:
-          {}
+          limits:
+            memory: 256Mi
+            cpu: 200m
+          requests:
+            memory: 128Mi
+            cpu: 100m
       volumes:
       - name: runner-secrets
         emptyDir:
@@ -101,6 +136,18 @@ spec:
       - name: etc-gitlab-runner
         emptyDir:
           medium: "Memory"
+      - name: etc-ssl-certs
+        emptyDir:
+          medium: "Memory"
+      - name: custom-ca-certificates
+        projected:
+          defaultMode: 0440
+          sources:
+          - secret:
+              name: gitlab-gitlab-tls
+              items:
+              - key: ca.crt
+                path: ca.crt
       - name: projected-secrets
         projected:
           sources:
@@ -118,4 +165,4 @@ spec:
           name: gitlab-gitlab-runner
       - name: gitlab-ca
         secret:
-          secretName: gitlab-ca-secret
+          secretName: gitlab-gitlab-tls

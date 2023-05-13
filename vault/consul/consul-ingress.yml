@@ -12,7 +12,9 @@ metadata:
     nginx.ingress.kubernetes.io/service-upstream: "true"
     cert-manager.io/cluster-issuer: kap-vault-issuer
     cert-manager.io/common-name: consul.dev.local
+    cert-manager.io/private-key-algorithm: "ECDSA"
 spec:
+  ingressClassName: nginx
   rules:
     - host: consul.dev.local
       http:

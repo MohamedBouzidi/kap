@@ -26,7 +26,6 @@ spec:
         app.kubernetes.io/instance: vault
         component: webhook
     spec:
-      
       affinity:
         podAntiAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
@@ -36,12 +35,7 @@ spec:
                   app.kubernetes.io/instance: "vault"
                   component: webhook
               topologyKey: kubernetes.io/hostname
-  
-      
-      
-      
       serviceAccountName: "vault-agent-injector"
-      
       securityContext:
         runAsNonRoot: true
         runAsGroup: 1000
@@ -57,7 +51,6 @@ spec:
             requests:
               cpu: 250m
               memory: 256Mi
-  
           image: "hashicorp/vault-k8s:1.1"
           imagePullPolicy: "IfNotPresent"
           securityContext:
@@ -96,7 +89,6 @@ spec:
               value: "map"
             - name: AGENT_INJECT_TEMPLATE_CONFIG_EXIT_ON_RETRY_FAILURE
               value: "true"
-            
             - name: POD_NAME
               valueFrom:
                 fieldRef:

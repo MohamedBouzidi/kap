@@ -1,12 +1,40 @@
 image: golang:latest
 
 variables:
-  CI_REGISTRY_CA:  "/tmp/gitlab-runner/certs/ca.crt"
+  GITLAB_CA:  "/tmp/gitlab-runner/certs/gitlab/ca.crt"
+  SONARQUBE_CA: "/tmp/gitlab-runner/certs/sonarqube/ca.crt"
 
 stages:
   - test
   - build
   - deploy
+
+sonarqube-check:
+  stage: test
+  image: 
+    name: sonarsource/sonar-scanner-cli:4.8.0
+    entrypoint: [""]
+  variables:
+    JAVA_HOME: "/usr/lib/jvm/java-11-openjdk"
+    SONAR_USER_HOME: "${CI_PROJECT_DIR}/.sonar"  # Defines the location of the analysis task cache
+    SONAR_TRUSTSTORE: "${JAVA_HOME}/lib/security/cacerts"
+    GIT_DEPTH: "0"  # Tells git to fetch all the branches of the project, required by the analysis task
+  before_script:
+    - mkdir -p ${SONAR_USER_HOME} && chown -R scanner-cli:scanner-cli ${SONAR_USER_HOME}
+    - cp -f ${JAVA_HOME}/lib/security/cacerts ${SONAR_TRUSTSTORE}
+    - keytool -importcert -file "${GITLAB_CA}" -alias gitlab -cacerts -storepass changeit -trustcacerts -noprompt
+    - keytool -importcert -file "${SONARQUBE_CA}" -alias sonarqube -cacerts -storepass changeit -trustcacerts -noprompt
+    - mkdir .scannerwork && chown 1000:1000 .scannerwork
+  cache:
+    key: "${CI_JOB_NAME}"
+    paths:
+      - .sonar/cache
+  script: 
+    - sonar-scanner -X
+  allow_failure: true
+  rules:
+    - if: $CI_COMMIT_BRANCH == 'main'
+
 
 .format:
   stage: test
@@ -36,7 +64,7 @@ build:
       --context "${CI_PROJECT_DIR}"
       --dockerfile "${CI_PROJECT_DIR}/Dockerfile"
       --destination "${CI_REGISTRY_IMAGE}:${CI_COMMIT_TAG}"
-      --registry-certificate "${CI_REGISTRY}=${CI_REGISTRY_CA}"
+      --registry-certificate "${CI_REGISTRY}=${GITLAB_CA}"
 
 .deploy:
   stage: deploy

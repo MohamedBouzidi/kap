@@ -60,6 +60,8 @@ spec:
               mountPath: "/var/lib/grafana/dashboards/kubernetes"
             - name: jenkins-dashboards
               mountPath: "/var/lib/grafana/dashboards/jenkins"
+            - name: sonarqube-dashboards
+              mountPath: "/var/lib/grafana/dashboards/sonarqube"
             - name: storage
               mountPath: "/var/lib/grafana"
           ports:
@@ -109,5 +111,8 @@ spec:
         - name: jenkins-dashboards
           configMap:
             name: grafana-jenkins-dashboards
+        - name: sonarqube-dashboards
+          configMap:
+            name: grafana-sonarqube-dashboards
         - name: storage
           emptyDir: {}

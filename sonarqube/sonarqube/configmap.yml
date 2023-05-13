@@ -5,7 +5,8 @@ metadata:
   namespace: sonarqube
 data:
   sonar.properties: |
-
+    sonar.es.bootstrap.checks.disable=true
+    sonar.web.javaOpts=-javaagent:/opt/sonarqube/data/jmx_prometheus_javaagent.jar=8000:/opt/sonarqube/conf/prometheus-config.yaml -Djavax.net.ssl.trustStore=/opt/sonarqube/certs/cacerts
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -15,7 +16,7 @@ metadata:
 data:
   SONAR_JDBC_USERNAME: sonarUser
   SONARQUBE_POSTGRESQL_HOST: sonarqube-postgresql.sonarqube.svc
-  SONAR_JDBC_URL: "jdbc:postgresql://sonarqube-postgresql.sonarqube.svc:5432/sonarDB"
+  SONAR_JDBC_URL: "jdbc:postgresql://sonarqube-postgresql.sonarqube.svc:5432/sonarDB?socketTimeout=1500"
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -59,3 +60,29 @@ metadata:
   namespace: sonarqube
 data:
   install_plugins: |-
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: sonarqube-prometheus-config
+  namespace: sonarqube
+  labels:
+    app: sonarqube
+    release: sonarqube
+data:
+  prometheus-config.yaml: |-
+    rules:
+      - pattern: ".*"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: sonarqube-prometheus-ce-config
+  namespace: sonarqube
+  labels:
+    app: sonarqube
+    release: sonarqube
+data:
+  prometheus-ce-config.yaml: |-
+    rules:
+      - pattern: ".*"

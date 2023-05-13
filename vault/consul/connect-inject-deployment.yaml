@@ -122,11 +122,11 @@ spec:
               readOnly: true
           resources:
             limits:
-              cpu: 50m
-              memory: 50Mi
+              cpu: 200m
+              memory: 200Mi
             requests:
-              cpu: 50m
-              memory: 50Mi
+              cpu: 100m
+              memory: 100Mi
       volumes:
         - name: certs
           secret:

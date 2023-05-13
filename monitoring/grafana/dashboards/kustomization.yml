@@ -8,3 +8,4 @@ resources:
 - nginx-configmap.yaml
 - k8s-configmap.yml
 - jenkins-configmap.yml
+- sonarqube-configmap.yml

@@ -13,7 +13,9 @@ metadata:
     nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
     cert-manager.io/cluster-issuer: kap-vault-issuer
     cert-manager.io/common-name: vault.dev.local
+    cert-manager.io/private-key-algorithm: "ECDSA"
 spec:
+  ingressClassName: nginx
   rules:
     - host: "vault.dev.local"
       http:

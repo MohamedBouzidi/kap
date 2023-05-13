@@ -1,8 +1,7 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
-namespace: sonarqube
 commonLabels:
-  app.kubernetes.io/name: sonarqueb
+  app.kubernetes.io/name: sonarqube
   app.kubernetes.io/part-of: sonarqube
 resources:
 - secret.yml
@@ -10,3 +9,4 @@ resources:
 - statefulset.yml
 - service.yml
 - ingress.yml
+- servicemonitor.yml

@@ -5,8 +5,10 @@ function display_help() {
     echo
     echo "  create_project      Create new project"
     echo "  delete_project      Delete project"
+    echo "  list_projects       List all projects"
     echo "  create_app          Create new app in project"
     echo "  delete_app          Delete app from project"
+    echo "  list_apps           List all apps in project"
     echo "  add_gitlab_ca       Add GitLab CA certificate"
     echo "  remove_gitlab_ca    Remove GitLab CA certificate"
     exit 1
@@ -64,7 +66,7 @@ case "$SUBCOMMAND" in
         bash $HELPERS_DIR/gitlab.sh create_group --gitlab-host $GITLAB_HOST --group-name $PROJECT_NAME
         bash $HELPERS_DIR/argocd.sh create_project --project-name $PROJECT_NAME
         ;;
-    
+
     "delete_project" )
         if [ "$#" -lt 2 ]; then
             echo "Usage: bash ./kapcli.sh delete_project [option...]" >&2
@@ -85,6 +87,25 @@ case "$SUBCOMMAND" in
         done
         bash $HELPERS_DIR/argocd.sh delete_project --project-name $PROJECT_NAME
         bash $HELPERS_DIR/gitlab.sh delete_group --gitlab-host $GITLAB_HOST --group-name $PROJECT_NAME
+        ;;
+
+    "list_projects" )
+        if [ "$#" -lt 2 ]; then
+            echo "Usage: bash ./kapcli.sh list_projects [option...]" >&2
+            echo
+            echo "  -h, --help                  Show help message"
+            exit 1
+        fi
+        VALID_ARGS=$(getopt -o h --long help -- "$@")
+        eval set -- "$VALID_ARGS"
+        while [ : ]; do
+            case "$1" in
+                -h | --help         )   display_help ;;
+                -- ) shift; break ;;
+                * ) break ;;
+            esac
+        done
+        bash $HELPERS_DIR/gitlab.sh list_groups --gitlab-host $GITLAB_HOST
         ;;
 
     "create_app" )
@@ -138,6 +159,27 @@ case "$SUBCOMMAND" in
         done
         bash $HELPERS_DIR/argocd.sh delete_app --project-name $PROJECT_NAME --app-name $APP_NAME
         bash $HELPERS_DIR/gitlab.sh delete_repo --gitlab-host $GITLAB_HOST --group-name $PROJECT_NAME --repo-name $APP_NAME
+        ;;
+
+    "list_apps" )
+        if [ "$#" -lt 4 ]; then
+            echo "Usage: bash ./kapcli.sh list_apps [option...]" >&2
+            echo
+            echo "  -p, --project-name          Project name"
+            echo "  -h, --help                  Show help message"
+            exit 1
+        fi
+        VALID_ARGS=$(getopt -o p:h --long project-name:,help -- "$@")
+        eval set -- "$VALID_ARGS"
+        while [ : ]; do
+            case "$1" in
+                -h | --help         )   display_help ;;
+                -p | --project-name )   PROJECT_NAME="$2"; shift 2 ;;
+                -- ) shift; break ;;
+                * ) break ;;
+            esac
+        done
+        bash $HELPERS_DIR/gitlab.sh list_repos --gitlab-host $GITLAB_HOST --group-name $PROJECT_NAME
         ;;
 
     "add_gitlab_ca" )

@@ -79,14 +79,20 @@ data:
   config.template.toml:   |
     [[runners]]
       tls-ca-file = "/home/gitlab-runner/.gitlab-runner/certs/ca.crt"
-      tls-cert-file = "/home/gitlab-runner/.gitlab-runner/certs/tls.crt"
-      tls-key-file = "/home/gitlab-runner/.gitlab-runner/certs/tls.key"
       [runners.kubernetes]
       image = "ubuntu:18.04"
       namespace = "gitlab"
       [[runners.kubernetes.volumes.secret]]
-        name = "gitlab-ca-secret"
-        mount_path = "/tmp/gitlab-runner/certs"
+        name = "gitlab-gitlab-tls"
+        mount_path = "/tmp/gitlab-runner/certs/gitlab"
+        read_only = true
+      [[runners.kubernetes.volumes.secret]]
+        name = "gitlab-minio-tls"
+        mount_path = "/etc/pki/tls/certs"
+        read_only = true
+      [[runners.kubernetes.volumes.secret]]
+        name = "sonarqube-ca-secret"
+        mount_path = "/tmp/gitlab-runner/certs/sonarqube"
       [runners.cache]
         Type = "s3"
         Path = "gitlab-runner"

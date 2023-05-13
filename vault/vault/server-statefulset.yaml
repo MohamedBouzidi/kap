@@ -29,7 +29,6 @@ spec:
         app.kubernetes.io/instance: vault
         component: server
     spec:
-      
       affinity:
         podAntiAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
@@ -39,13 +38,8 @@ spec:
                   app.kubernetes.io/instance: "vault"
                   component: server
               topologyKey: kubernetes.io/hostname
-  
-      
-      
-      
       terminationGracePeriodSeconds: 10
       serviceAccountName: vault
-      
       securityContext:
         runAsNonRoot: true
         runAsGroup: 1000
@@ -71,7 +65,6 @@ spec:
             requests:
               cpu: 250m
               memory: 256Mi
-  
           image: vault:1.12.2
           imagePullPolicy: IfNotPresent
           command:
@@ -87,7 +80,6 @@ spec:
             [ -n "${TRANSIT_ADDR}" ] && sed -Ei "s|TRANSIT_ADDR|${TRANSIT_ADDR?}|g" /tmp/storageconfig.hcl;
             [ -n "${RAFT_ADDR}" ] && sed -Ei "s|RAFT_ADDR|${RAFT_ADDR?}|g" /tmp/storageconfig.hcl;
             /usr/local/bin/docker-entrypoint.sh vault server -config=/tmp/storageconfig.hcl 
-   
           securityContext:
             allowPrivilegeEscalation: false
           env:
@@ -127,11 +119,8 @@ spec:
                   fieldPath: metadata.name
             - name: HOME
               value: "/home/vault"
-            
-            
             - name: "VAULT_CACERT"
               value: "/vault/userconfig/vault-secret/ca.crt"
-            
           volumeMounts:
             - name: audit
               mountPath: /vault/audit
@@ -185,22 +174,17 @@ spec:
                   # to this pod while it's terminating
                   "sleep 5 && kill -SIGTERM $(pidof vault)",
                 ]
-      
-  
   volumeClaimTemplates:
     - metadata:
         name: data
-      
       spec:
         accessModes:
           - ReadWriteOnce
         resources:
           requests:
             storage: 2Gi
-      
     - metadata:
         name: audit
-      
       spec:
         accessModes:
           - ReadWriteOnce

@@ -3,6 +3,8 @@ kind: Service
 metadata:
   name: sonarqube
   namespace: sonarqube
+  labels:
+    app: sonarqube-metrics
 spec:
   type: ClusterIP
   ports:

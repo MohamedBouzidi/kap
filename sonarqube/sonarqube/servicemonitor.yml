@@ -1,0 +1,27 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: sonarqube-metrics
+  namespace: monitoring
+  labels:
+    app: sonarqube-metrics
+    prometheus: monitoring
+spec:
+  namespaceSelector:
+    matchNames:
+    - sonarqube
+  selector:
+    matchLabels:
+      app: sonarqube-metrics
+  endpoints:
+  - port: http
+    path: /api/monitoring/metrics
+    scheme: http
+    interval: 30s
+    basicAuth:
+      username:
+        name: sonarqube-monitoring-basicauth
+        key: user
+      password:
+        name: sonarqube-monitoring-basicauth
+        key: password

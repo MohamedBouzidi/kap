@@ -62,3 +62,11 @@ data:
         path: /var/lib/grafana/dashboards/jenkins
       orgId: 1
       type: file
+    - disableDeletion: false
+      editable: false
+      folder: SonarQube
+      name: sonarqube
+      options:
+        path: /var/lib/grafana/dashboards/sonarqube
+      orgId: 1
+      type: file

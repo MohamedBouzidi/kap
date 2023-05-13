@@ -5,8 +5,10 @@ metadata:
   namespace: sonarqube
   annotations:
     nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
+    nginx.ingress.kubernetes.io/proxy-body-size: "64m"
     cert-manager.io/cluster-issuer: kap-vault-issuer
     cert-manager.io/common-name: sonarqube.dev.local
+    cert-manager.io/private-key-algorithm: "ECDSA"
 spec:
   ingressClassName: nginx
   rules:

@@ -317,6 +317,7 @@ metadata:
     nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
     cert-manager.io/cluster-issuer: kap-vault-issuer
     cert-manager.io/common-name: dashboard.dev.local
+    cert-manager.io/private-key-algorithm: "ECDSA"
 spec:
   rules:
   - host: dashboard.dev.local
