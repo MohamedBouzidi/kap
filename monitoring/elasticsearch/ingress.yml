@@ -4,7 +4,6 @@ metadata:
   name: kap-elasticsearch
   namespace: elastic-system
   annotations:
-    kubernetes.io/ingress.class: "nginx"    
     nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
     cert-manager.io/cluster-issuer: kap-vault-issuer
     cert-manager.io/common-name: elasticsearch.dev.local
@@ -33,7 +32,6 @@ metadata:
   name: kap-kibana
   namespace: elastic-system
   annotations:
-    kubernetes.io/ingress.class: "nginx"
     nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
     cert-manager.io/cluster-issuer: kap-vault-issuer
     cert-manager.io/common-name: kibana.dev.local
