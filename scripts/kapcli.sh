@@ -26,6 +26,7 @@ function build_app_directory() {
     cp $(find $PROJECTS_DIR/$APP_TYPE -type f) $APP_DIRECTORY
     mkdir $APP_DIRECTORY/$ARGO_PATH
     envsubst < $TEMPLATES_DIR/deploy.yml > $APP_DIRECTORY/$ARGO_PATH/deploy.yml
+    envsubst < $TEMPLATES_DIR/sonar-project.properties > $APP_DIRECTORY/sonar-project.properties
     echo -ne "# Hello ${APP_NAME}\n\nThis is your new application code." > $APP_DIRECTORY/README.md
 }
 
@@ -41,6 +42,7 @@ TEMPLATES_DIR=$SCRIPT_DIR/templates
 HELPERS_DIR=$SCRIPT_DIR/helpers
 PROJECTS_DIR=$TEMPLATES_DIR/projects
 GITLAB_HOST="gitlab.dev.local:9443"
+SONARQUBE_HOST="sonarqube.dev.local:9443"
 ARGO_PATH="cd"
 
 case "$SUBCOMMAND" in
@@ -132,6 +134,7 @@ case "$SUBCOMMAND" in
         done
         build_app_directory $PROJECT_NAME $APP_NAME $APP_TYPE $PROJECTS_DIR $TEMPLATES_DIR $ARGO_PATH
         bash $HELPERS_DIR/gitlab.sh create_repo --gitlab-host $GITLAB_HOST --group-name $PROJECT_NAME --repo-name $APP_NAME
+        bash $HELPERS_DIR/sonarqube.sh create_project --sonarqube-host $SONARQUBE_HOST --project-name "${PROJECT_NAME}-${APP_NAME}"
         bash $HELPERS_DIR/gitlab.sh commit_directory --gitlab-host $GITLAB_HOST --group-name $PROJECT_NAME --repo-name $APP_NAME --directory $APP_DIRECTORY
         bash $HELPERS_DIR/argocd.sh create_app --project-name $PROJECT_NAME --app-name $APP_NAME --argo-path $ARGO_PATH
         rm -rf $APP_DIRECTORY
@@ -139,7 +142,7 @@ case "$SUBCOMMAND" in
 
     "delete_app" )
         if [ "$#" -lt 4 ]; then
-            echo "Usage: bash ./kapcli.sh create_project [option...]" >&2
+            echo "Usage: bash ./kapcli.sh delete_app [option...]" >&2
             echo
             echo "  -p, --project-name          Project name"
             echo "  -n, --app-name              App name"
@@ -159,6 +162,7 @@ case "$SUBCOMMAND" in
         done
         bash $HELPERS_DIR/argocd.sh delete_app --project-name $PROJECT_NAME --app-name $APP_NAME
         bash $HELPERS_DIR/gitlab.sh delete_repo --gitlab-host $GITLAB_HOST --group-name $PROJECT_NAME --repo-name $APP_NAME
+        bash $HELPERS_DIR/sonarqube.sh delete_project --sonarqube-host $SONARQUBE_HOST --project-name "${PROJECT_NAME}-${APP_NAME}"
         ;;
 
     "list_apps" )

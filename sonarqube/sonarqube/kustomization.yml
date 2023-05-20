@@ -7,6 +7,7 @@ resources:
 - secret.yml
 - configmap.yml
 - statefulset.yml
+- job.yml
 - service.yml
 - ingress.yml
 - servicemonitor.yml

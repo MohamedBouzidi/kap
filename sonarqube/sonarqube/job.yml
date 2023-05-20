@@ -1,0 +1,93 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: sonarqube-init
+  namespace: sonarqube
+  labels:
+    app: sonarqube
+    release: sonarqube
+    role: init-job
+spec:
+  template:
+    metadata:
+      labels:
+        app: sonarqube
+        release: sonarqube
+        role: init-job
+    spec:
+      restartPolicy: OnFailure
+      securityContext:
+        fsGroup: 1000
+      initContainers:
+      - name: sonarqube-change-default-admin-password
+        image: curlimages/curl:8.1.0
+        command: ["sh", "-c"]
+        args:
+          - |
+            until curl -v --connect-timeout 100 "sonarqube:9000/api/system/status" | grep -q -e '"status":"UP"' -e '"status":"DB_MIGRATION_NEEDED"' -e '"status":"DB_MIGRATION_RUNNING"'; do sleep 10; done
+            curl -v --connect-timeout 100 -u admin:$CURRENT_ADMIN_PASSWORD -X POST "sonarqube:9000/api/users/change_password?login=admin&previousPassword=$CURRENT_ADMIN_PASSWORD&password=$ADMIN_PASSWORD"
+        env:
+        - name: ADMIN_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: sonarqube-admin-password
+              key: password
+        - name: CURRENT_ADMIN_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: sonarqube-admin-password
+              key: currentPassword
+      - name: sonarqube-add-gitlab-integration
+        image: curlimages/curl:8.1.0
+        command: ["sh", "-c"]
+        args:
+          - |
+            until curl -v --connect-timeout 100 "sonarqube:9000/api/system/status" | grep -q -e '"status":"UP"' -e '"status":"DB_MIGRATION_NEEDED"' -e '"status":"DB_MIGRATION_RUNNING"'; do sleep 10; done
+            GITLAB_HOST="gitlab.dev.local"
+            echo GITLAB_HOST: $GITLAB_HOST
+            GITLAB_AUTH_TOKEN=$(curl --cacert /tmp/gitlab-ca.crt -s -X POST -H "Content-Type: application/json" \
+                                    -d "{\"grant_type\":\"password\",\"username\":\"root\",\"password\":\"${GITLAB_ROOT_PASSWORD}\"}" \
+                                    "https://${GITLAB_HOST}/oauth/token" | sed -E 's/.*"access_token":"?([^,"]*)"?.*/\1/')
+            echo GITLAB_AUTH_TOKEN: $GITLAB_AUTH_TOKEN
+            GITLAB_AUTH_HEADER="Authorization: Bearer $GITLAB_AUTH_TOKEN"
+            echo GITLAB_AUTH_HEADER: $GITLAB_AUTH_HEADER
+            GITLAB_PERSONAL_ACCESS_TOKEN=$(curl --cacert /tmp/gitlab-ca.crt -s -X POST -H "Content-Type: application/json" -H "${GITLAB_AUTH_HEADER}" \
+                                    -d "{ \"name\":\"SonarQube\", \"scopes\":[\"api\"], \"expires_at\":\"2026-01-31\" }" \
+                                    "https://${GITLAB_HOST}/api/v4/users/1/personal_access_tokens" | sed -E 's/.*"token":"?([^,"]*)"?.*/\1/')
+            echo GITLAB_PERSONAL_ACCESS_TOKEN: $GITLAB_PERSONAL_ACCESS_TOKEN
+            curl -v --connect-timeout 100 -u admin:$ADMIN_PASSWORD -X POST "sonarqube:9000/api/alm_settings/create_gitlab?key=gitlab-dev-local&personalAccessToken=${GITLAB_PERSONAL_ACCESS_TOKEN}&url=https://${GITLAB_HOST}/api/v4"
+            SONARQUBE_TOKEN=$(curl -s --connect-timeout 100 -u admin:$ADMIN_PASSWORD -X POST \
+                                    "sonarqube:9000/api/user_tokens/generate?name=gitlab-dev-local&type=USER_TOKEN&login=admin" | sed -E 's/.*"token":"?([^,"]*)"?.*/\1/')
+            echo SONARQUBE_TOKEN: $SONARQUBE_TOKEN
+            curl --cacert /tmp/gitlab-ca.crt -s -X POST -H "Content-Type: application/json" -H "${GITLAB_AUTH_HEADER}" \
+                -d "{\"key\":\"SONAR_HOST_URL\",\"value\":\"sonarqube.dev.local\",\"variable_type\":\"env_var\",\"protected\":true,\"masked\":true}" \
+                "https://${GITLAB_HOST}/api/v4/admin/ci/variables"
+            curl --cacert /tmp/gitlab-ca.crt -s -X POST -H "Content-Type: application/json" -H "${GITLAB_AUTH_HEADER}" \
+                -d "{\"key\":\"SONAR_TOKEN\",\"value\":\"${SONARQUBE_TOKEN}\",\"variable_type\":\"env_var\",\"protected\":true,\"masked\":true}" \
+                "https://${GITLAB_HOST}/api/v4/admin/ci/variables"
+        env:
+        - name: ADMIN_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: sonarqube-admin-password
+              key: password
+        - name: GITLAB_ROOT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: gitlab-admin-password
+              key: password
+        volumeMounts:
+        - mountPath: /tmp/gitlab-ca.crt
+          subPath: gitlab-ca.crt
+          name: gitlab-ca
+      containers:
+      - name: finish
+        image: busybox:1.32
+        command: ["sh", "-c", "echo SonarQube init finished."]
+      volumes:
+      - name: gitlab-ca
+        secret:
+          secretName: gitlab-ca-cert
+          items:
+          - key: gitlab-dev-local
+            path: gitlab-ca.crt

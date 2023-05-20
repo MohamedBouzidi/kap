@@ -5,7 +5,7 @@ SONARQUBE_CA_FILE=$(mktemp)
 
 kubectl create -k $SCRIPT_DIR/..
 kubectl delete secret/sonarqube-ca-secret --namespace gitlab
-kubectl get secret/sonarqube-cert --namespace sonarqube -o jsonpath='{.data.ca\.crt}' | base64 -d > $SONARQUBE_CA_FILE
+kubectl get secret/vault-cert --namespace vault -o jsonpath='{.data.ca\.crt}' | base64 -d > $SONARQUBE_CA_FILE
 kubectl create secret generic sonarqube-ca-secret --type=Opaque --from-file=ca.crt=$SONARQUBE_CA_FILE --namespace gitlab
 
 rm $SONARQUBE_CA_FILE
