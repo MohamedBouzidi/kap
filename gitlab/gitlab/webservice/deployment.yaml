@@ -32,9 +32,7 @@ spec:
         release: gitlab
         heritage: Helm
         gitlab.com/webservice-name: default
-        
-        
-        
+        gitlab-role: app
       annotations:
         checksum/config: 518c27873667f5a81f32c01294d259e24a8b95cd259cf70a51c1165df130e6ae
         cluster-autoscaler.kubernetes.io/safe-to-evict: "true"

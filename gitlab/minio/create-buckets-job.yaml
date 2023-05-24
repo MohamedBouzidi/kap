@@ -10,7 +10,6 @@ metadata:
     chart: minio-0.4.3
     release: gitlab
     heritage: Helm
-    
 spec:
   activeDeadlineSeconds: 600
   template:
@@ -21,14 +20,9 @@ spec:
         chart: minio-0.4.3
         release: gitlab
         heritage: Helm
-        
-        
-
     spec:
       automountServiceAccountToken: false
       restartPolicy: OnFailure
-      
-      
       volumes:
         - name: minio-configuration
           projected:

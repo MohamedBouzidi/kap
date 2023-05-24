@@ -21,41 +21,10 @@ data:
       tls_key_file = "/vault/userconfig/vault-secret/tls.key"
       tls_client_ca_file = "/vault/userconfig/vault-secret/ca.crt"
     }
-    
-    /*storage "raft" {
-      path = "/vault/data"
-      retry_join {
-        leader_api_addr = "https://vault-0.vault-internal:8200"
-        leader_ca_cert_file = "/vault/userconfig/vault-secret/ca.crt"
-        leader_client_cert_file = "/vault/userconfig/vault-secret/tls.crt"
-        leader_client_key_file = "/vault/userconfig/vault-secret/tls.key"
-      }
-      retry_join {
-        leader_api_addr = "https://vault-1.vault-internal:8200"
-        leader_ca_cert_file = "/vault/userconfig/vault-secret/ca.crt"
-        leader_client_cert_file = "/vault/userconfig/vault-secret/tls.crt"
-        leader_client_key_file = "/vault/userconfig/vault-secret/tls.key"
-      }
-      retry_join {
-        leader_api_addr = "https://vault-2.vault-internal:8200"
-        leader_ca_cert_file = "/vault/userconfig/vault-secret/ca.crt"
-        leader_client_cert_file = "/vault/userconfig/vault-secret/tls.crt"
-        leader_client_key_file = "/vault/userconfig/vault-secret/tls.key"
-      }
-    
-      autopilot {
-        cleanup_dead_servers = "true"
-        last_contact_threshold = "200ms"
-        last_contact_failure_threshold = "10m"
-        max_trailing_logs = 250000
-        min_quorm = 3
-        server_stabilitzation_time = "10s"
-      }
-    }*/
 
     storage "consul" {
       address = "consul-consul-server-0.consul-consul-server.vault:8500"
       path = "vault/"
     }
-    
+
     service_registration "kubernetes" {}

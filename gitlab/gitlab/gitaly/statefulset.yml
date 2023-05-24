@@ -27,8 +27,7 @@ spec:
         chart: gitaly-6.6.2
         release: gitlab
         heritage: Helm
-        
-        
+        gitlab-role: app
       annotations:
         checksum/config: e74e70fa8a77c8aea0b085ebcad027f1c258d2bfa6999927d674f37ff124e5da
         gitlab.com/prometheus_scrape: "true"

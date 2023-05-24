@@ -29,6 +29,7 @@ spec:
         release: gitlab
         chart: prometheus-15.0.4
         heritage: Helm
+        gitlab-role: infrastructure
     spec:
       enableServiceLinks: true
       serviceAccountName: gitlab-prometheus-server

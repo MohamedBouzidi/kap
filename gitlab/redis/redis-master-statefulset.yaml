@@ -24,6 +24,7 @@ spec:
         chart: redis-11.3.4
         release: gitlab
         role: master
+        gitlab-role: infrastructure
       annotations:
         checksum/health: 5eeabb177e9b1a53b0ccf538fa02a60802a51318cbadadefa78291f40803e42d
         checksum/configmap: d91e3da32a0194a037ad006f8da75188d126239ba15c001c09320e8adfb213d8
@@ -31,7 +32,6 @@ spec:
         prometheus.io/port: "9121"
         prometheus.io/scrape: "true"
     spec:
-      
       securityContext:
         fsGroup: 1001
       serviceAccountName: default

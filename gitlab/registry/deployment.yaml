@@ -27,8 +27,7 @@ spec:
         chart: registry-0.7.0
         release: gitlab
         heritage: Helm
-        
-        
+        gitlab-role: registry
       annotations:
         checksum/configmap: 2ba6ce2b2fa9193118a885603d17ae8a596e412192f2e04e63d7a92f204055ae
         cluster-autoscaler.kubernetes.io/safe-to-evict: "true"

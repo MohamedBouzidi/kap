@@ -30,9 +30,10 @@ spec:
         release: "gitlab"
         heritage: "Helm"
         role: master
+        gitlab-role: infrastructure
       annotations:
         postgresql.gitlab/init-revision: "1"
-    spec:      
+    spec:
       securityContext:
         fsGroup: 1001
       containers:

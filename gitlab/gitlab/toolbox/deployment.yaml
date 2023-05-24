@@ -29,8 +29,7 @@ spec:
         chart: toolbox-6.6.2
         release: gitlab
         heritage: Helm
-        
-        
+        gitlab-role: app
       annotations:
         checksum/config: 861429b0d35aaaa957050d700cf1a531eac33ced5a7d52abd6d249a2ecce2f39
         cluster-autoscaler.kubernetes.io/safe-to-evict: "true"

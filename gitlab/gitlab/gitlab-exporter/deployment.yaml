@@ -27,8 +27,7 @@ spec:
         chart: gitlab-exporter-6.6.2
         release: gitlab
         heritage: Helm
-        
-        
+        gitlab-role: app
       annotations:
         checksum/config: ddf3b69d1b6a1dae6b6467e0f0a239ec5200446e6c16ac23d4e6173f850fbd73
         gitlab.com/prometheus_scrape: "true"

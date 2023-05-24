@@ -10,7 +10,6 @@ metadata:
     chart: gitlab-6.6.2
     release: gitlab
     heritage: Helm
-    
   annotations:
     "helm.sh/hook": pre-upgrade
     "helm.sh/hook-weight": "-11"
@@ -117,14 +116,11 @@ spec:
       labels:
         app: gitlab
         release: gitlab
-
     spec:
-      
       securityContext:
         runAsUser: 65534
         fsGroup: 65534
       restartPolicy: Never
-      
       containers:
         - name: run-check
           image: "registry.gitlab.com/gitlab-org/cloud-native/mirror/images/busybox:latest"

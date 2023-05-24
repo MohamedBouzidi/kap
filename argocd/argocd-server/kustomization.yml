@@ -10,3 +10,5 @@ resources:
 - ingress.yml
 - networkpolicy.yml
 - deployment.yml
+- secret.yml
+- change-admin-password.yml

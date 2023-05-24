@@ -26,8 +26,7 @@ spec:
         chart: kas-6.6.2
         release: gitlab
         heritage: Helm
-        
-        
+        gitlab-role: app
       annotations:
         checksum/config: 23757987e44fdaccee11503b9254b12793b7782b01cd5dde2db88e025e6698a5
         cluster-autoscaler.kubernetes.io/safe-to-evict: "true"

@@ -8,5 +8,6 @@ kubectl wait -n jaeger --for=condition=ready pod --selector=app.kubernetes.io/na
 
 bash ./monitoring/jaeger/scripts/create_secrets.sh
 
+kubectl create -f ./monitoring/jaeger/ingress.yml
 kubectl create -f ./monitoring/jaeger/traefik.yml
 kubectl wait -n traefik --for=condition=ready pod --selector=app=jaeger-traefik --timeout=240s

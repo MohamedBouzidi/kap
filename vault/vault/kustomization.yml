@@ -14,7 +14,7 @@ resources:
 - server-ha-active-service.yaml
 - server-ha-standby-service.yaml
 - server-headless-service.yaml
-- server-ingress.yaml
 - server-service.yaml
 - server-statefulset.yaml
 - ui-service.yaml
+- server-ingress.yaml

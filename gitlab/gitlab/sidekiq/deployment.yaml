@@ -28,8 +28,7 @@ spec:
         chart: sidekiq-6.6.2
         release: gitlab
         heritage: Helm
-        
-        
+        gitlab-role: app
         queue-pod-name: all-in-1
       annotations:
         checksum/configmap: 96f8106862ef7ac8b9420b8144051fd1a0225e6fd0db4d834c47dc586e9bbf6a
@@ -41,7 +40,6 @@ spec:
         prometheus.io/port: "3807"
         prometheus.io/path: /metrics
     spec:
-      
       securityContext:
         runAsUser: 1000
         fsGroup: 1000
@@ -59,12 +57,8 @@ spec:
       automountServiceAccountToken: false
       terminationGracePeriodSeconds: 30
       initContainers:
-        
         - name: certificates
           image: "registry.gitlab.com/gitlab-org/build/cng/alpine-certificates:20191127-r2@sha256:367d437d024d7647432d67fb2442e3e5723af5930bad77d3535f4f8f4f8630d9"  
-          env:
-          
-          
           volumeMounts:
           - name: etc-ssl-certs
             mountPath: /etc/ssl/certs
@@ -77,15 +71,8 @@ spec:
               cpu: 50m
         - name: configure
           command: ['sh', '/config/configure']
-          image: "registry.gitlab.com/gitlab-org/cloud-native/mirror/images/busybox:latest"          
-          env:
-          
-          
+          image: "registry.gitlab.com/gitlab-org/cloud-native/mirror/images/busybox:latest"
           volumeMounts:
-          
-          
-          
-          
           - name: sidekiq-config
             mountPath: /config
             readOnly: true

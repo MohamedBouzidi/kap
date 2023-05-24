@@ -14,3 +14,6 @@ GITLAB_ADMIN_PASSWORD=$(kubectl get secret/gitlab-gitlab-initial-root-password -
 kubectl create secret generic gitlab-admin-password --type=Opaque --from-literal=password=$GITLAB_ADMIN_PASSWORD --namespace sonarqube
 
 rm $GITLAB_CA_FILE
+
+kubectl wait -n sonarqube --for=condition=ready pod --selector=release=sonarqube --selector=app=postgresql --timeout=240s
+kubectl wait -n sonarqube --for=condition=ready pod --selector=release=sonarqube --selector=app=sonarqube --selector=role=web --timeout=240s

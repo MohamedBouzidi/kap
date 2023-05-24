@@ -3,11 +3,6 @@ kind: Issuer
 metadata:
   name: vault-ss-issuer
   namespace: vault
-  labels:
-    app: certmanager-issuer
-    chart: certmanager-issuer-0.1.0
-    release: vault
-    heritage: Helm
 spec:
   selfSigned: {}
 ---

@@ -11,3 +11,5 @@ resources:
 - ingress.yaml
 - pdb.yaml
 - service.yaml
+- secret.yml
+- create-admin-user.yml

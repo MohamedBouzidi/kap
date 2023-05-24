@@ -41,6 +41,13 @@ spec:
       name: cache
     - mountPath: /gitlab-ca
       name: gitlab-ca
+    resources:
+      requests:
+        cpu: 100m
+        memory: 100Mi
+      limits:
+        cpu: 150m
+        memory: 150Mi
   volumes:
   - name: cache
     emptyDir: {}

@@ -26,8 +26,7 @@ spec:
         chart: gitlab-shell-6.6.2
         release: gitlab
         heritage: Helm
-        
-        
+        gitlab-role: app
       annotations:
         checksum/config: 90ed61598783408d2bc496e87825255ba91590d8c4546406744537b886064772
         checksum/config-sshd: af43517e5e80d6c0d2d755ffb324a82ae3ee9c034bde242fbe8471e5477a3f2b

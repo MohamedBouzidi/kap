@@ -10,9 +10,6 @@ metadata:
     chart: minio-0.4.3
     release: gitlab
     heritage: Helm
-    
-  annotations:
-    
 spec:
   selector:
     matchLabels:
@@ -30,16 +27,12 @@ spec:
         chart: minio-0.4.3
         release: gitlab
         heritage: Helm
-        
-        
-      annotations:
+        gitlab-role: infrastructure
     spec:
       automountServiceAccountToken: false
-      
       securityContext:
         runAsUser: 1000
         fsGroup: 1000
-      
       volumes:
         - name: podinfo
           downwardAPI:
