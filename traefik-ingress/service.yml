@@ -25,6 +25,7 @@ spec:
     name: "websecure"
     targetPort: websecure
     protocol: TCP
+    nodePort: 30443
   - port: 9000
     name: "dashboard"
     targetPort: traefik

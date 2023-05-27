@@ -1,18 +1,21 @@
 apiVersion: jaegertracing.io/v1
 kind: Jaeger
 metadata:
-  name: jaeger-traefik
-  namespace: traefik
+  name: jaeger-kap
+  namespace: jaeger
   labels:
-    app: jaeger-traefik
+    app: jaeger-kap
 spec:
   strategy: production
   collector:
     maxReplicas: 5
     resources:
-      limits:
+      requests:
         cpu: 100m
         memory: 128Mi
+      limits:
+        cpu: 200m
+        memory: 256Mi
   query:
     metricsStorage:
       type: prometheus
@@ -24,7 +27,7 @@ spec:
       options:
         es:
           server-urls: https://kap-elastic-es-http.elastic-system.svc:9200
-          index-prefix: traefik_
+          index-prefix: kap_
           version: 7
           # create-index-templates: false
           tls:

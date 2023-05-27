@@ -21,17 +21,11 @@ kubectl wait -n ingress-nginx --for=condition=ready pod --selector=app.kubernete
 bash $SCRIPT_DIR/../external-dns/install.sh
 bash $SCRIPT_DIR/../vault/scripts/install_vault.sh
 
+bash $SCRIPT_DIR/../monitoring/install.sh
 kubectl apply -f $SCRIPT_DIR/../dashboard/recommended.yaml
-# echo
-# echo "DASHBOARD TOKEN:"
-# bash dashboard/get_dashboard_token.sh
-# echo
 
 kubectl create -k $SCRIPT_DIR/../traefik-ingress
 kubectl wait -n traefik --for=condition=ready pod --selector=app.kubernetes.io/name=traefik-ingress-controller --timeout=300s
-
-bash $SCRIPT_DIR/../monitoring/install.sh
-bash $SCRIPT_DIR/../monitoring/install_jaeger.sh
 
 kubectl create -k $SCRIPT_DIR/../argocd
 

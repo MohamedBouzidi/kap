@@ -1,30 +1,36 @@
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  name: traefik-https
-  namespace: traefik
-  annotations:
-    nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
-    cert-manager.io/cluster-issuer: kap-vault-issuer
-    cert-manager.io/common-name: traefik.dev.local
-    cert-manager.io/private-key-algorithm: "ECDSA"
-spec:
-  ingressClassName: nginx
-  rules:
-  - host: traefik.dev.local
-    http:
-      paths:
-      - path: /
-        pathType: Prefix
-        backend:
-          service:
-            name: traefik-ingress-controller
-            port:
-              number: 443
-  tls:
-  - hosts:
-    - traefik.dev.local
-    secretName: traefik-cert
+#
+#  NGINX Ingress does not support wildcard hosts with SSL passthrough yet
+#  Issue: https://github.com/kubernetes/ingress-nginx/issues/9473
+#
+# apiVersion: networking.k8s.io/v1
+# kind: Ingress
+# metadata:
+#   name: traefik-app
+#   namespace: traefik
+#   annotations:
+#     nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
+#     nginx.ingress.kubernetes.io/ssl-passthrough: "true"
+#     nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+#     # cert-manager.io/cluster-issuer: "kap-vault-issuer"
+#     # cert-manager.io/common-name: "*.app.dev.local"
+#     # cert-manager.io/private-key-algorithm: "ECDSA"
+# spec:
+#   ingressClassName: nginx
+#   rules:
+#   - host: "*.app.dev.local"
+#     http:
+#       paths:
+#       - path: /
+#         pathType: Prefix
+#         backend:
+#           service:
+#             name: traefik-ingress-controller
+#             port:
+#               number: 443
+#   # tls:
+#   # - hosts:
+#   #   - "*.app.dev.local"
+#   #   secretName: traefik-app-cert
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress

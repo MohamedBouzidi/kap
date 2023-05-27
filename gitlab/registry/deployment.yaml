@@ -10,9 +10,6 @@ metadata:
     chart: registry-0.7.0
     release: gitlab
     heritage: Helm
-    
-  annotations:
-    
 spec:
   # Don't provide replicas when HPA are present
   # replicas: 2
@@ -32,7 +29,6 @@ spec:
         checksum/configmap: 2ba6ce2b2fa9193118a885603d17ae8a596e412192f2e04e63d7a92f204055ae
         cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
     spec:
-      
       securityContext:
         runAsUser: 1000
         fsGroup: 1000
@@ -47,13 +43,9 @@ spec:
                   app: registry
                   release: gitlab
       automountServiceAccountToken: false
-      
       initContainers:
         - name: certificates
-          image: "registry.gitlab.com/gitlab-org/build/cng/alpine-certificates:20191127-r2@sha256:367d437d024d7647432d67fb2442e3e5723af5930bad77d3535f4f8f4f8630d9"  
-          env:
-          
-          
+          image: "registry.gitlab.com/gitlab-org/build/cng/alpine-certificates:20191127-r2@sha256:367d437d024d7647432d67fb2442e3e5723af5930bad77d3535f4f8f4f8630d9"
           volumeMounts:
           - name: etc-ssl-certs
             mountPath: /etc/ssl/certs
@@ -65,7 +57,7 @@ spec:
             requests:
               cpu: 50m
         - name: configure
-          image: "registry.gitlab.com/gitlab-org/cloud-native/mirror/images/busybox:latest"          
+          image: "registry.gitlab.com/gitlab-org/cloud-native/mirror/images/busybox:latest"
           command: ["sh", "/config/configure"]
           volumeMounts:
             - name: registry-secrets
@@ -75,15 +67,9 @@ spec:
           resources:
             requests:
               cpu: 50m
-          env:
-          
-                
       containers:
         - name: registry
-          image: "registry.gitlab.com/gitlab-org/build/cng/gitlab-container-registry:v3.61.0-gitlab"          
-          env:
-          
-          
+          image: "registry.gitlab.com/gitlab-org/build/cng/gitlab-container-registry:v3.61.0-gitlab"
           volumeMounts:
           - name: registry-server-config
             mountPath: /etc/docker/registry/
@@ -149,9 +135,6 @@ spec:
                   path: httpSecret
           - secret:
               name: "gitlab-minio-secret"
-          
-          
-      
       - name: etc-ssl-certs
         emptyDir:
           medium: "Memory"

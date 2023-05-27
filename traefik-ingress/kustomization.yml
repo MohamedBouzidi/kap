@@ -10,6 +10,7 @@ resources:
 - ingress.yml
 - ingressclass.yml
 - defaultcertificate.yml
+- configmap.yml
 - service.yml
 - deployment.yml
 - dashboard.yml

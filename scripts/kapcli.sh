@@ -67,6 +67,7 @@ case "$SUBCOMMAND" in
         done
         bash $HELPERS_DIR/gitlab.sh create_group --gitlab-host $GITLAB_HOST --group-name $PROJECT_NAME
         bash $HELPERS_DIR/argocd.sh create_project --project-name $PROJECT_NAME
+        bash $HELPERS_DIR/traefik.sh add_namespace --namespace $PROJECT_NAME
         ;;
 
     "delete_project" )
@@ -89,6 +90,7 @@ case "$SUBCOMMAND" in
         done
         bash $HELPERS_DIR/argocd.sh delete_project --project-name $PROJECT_NAME
         bash $HELPERS_DIR/gitlab.sh delete_group --gitlab-host $GITLAB_HOST --group-name $PROJECT_NAME
+        bash $HELPERS_DIR/traefik.sh remove_namespace --namespace $PROJECT_NAME
         ;;
 
     "list_projects" )

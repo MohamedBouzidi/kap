@@ -18,8 +18,10 @@ function display_help() {
 function auth() { 
     local GITLAB_HOST=$1
 
-	export PASSWORD=$(kubectl get secret/gitlab-gitlab-initial-root-password -n gitlab -o jsonpath='{.data.password}' | base64 -d)
-	export TOKEN=$(curl -k -s -X POST -H "Content-Type: application/json" -d "{\"grant_type\":\"password\",\"username\":\"root\",\"password\":\"$PASSWORD\"}" "https://$GITLAB_HOST/oauth/token" | jq -r ".access_token")
+	ADMIN_USER=$(kubectl get secret/gitlab-admin-user -n gitlab -o jsonpath='{.data}')
+	export USERNAME=$(echo $ADMIN_USER | jq -r '.username | @base64d')
+    export PASSWORD=$(echo $ADMIN_USER | jq -r '.password | @base64d')
+    export TOKEN=$(curl -k -s -X POST -H "Content-Type: application/json" -d "{\"grant_type\":\"password\",\"username\":\"$USERNAME\",\"password\":\"$PASSWORD\"}" "https://$GITLAB_HOST/oauth/token" | jq -r ".access_token")
 	export AUTH_HEADER="Authorization: Bearer $TOKEN"
 }
 
@@ -288,7 +290,7 @@ case "$SUBCOMMAND" in
         done
         auth $GITLAB_HOST
         delete_namespace $GROUP_NAME
-        delete_user $GITLAB_HOST $GROUP_NAME
+        # delete_user $GITLAB_HOST $GROUP_NAME
         delete_group $GITLAB_HOST $GROUP_NAME
         ;;
 

@@ -39,34 +39,26 @@ spec:
     protocol: TCP
 ---
 apiVersion: traefik.containo.us/v1alpha1
-kind: Middleware
-metadata:
-  name: ${APP_NAME}-middleware
-  namespace: app-ingress
-spec:
-  stripPrefix:
-    prefixes:
-      - "/${APP_NAME}"
-    forceSlash: true
----
-apiVersion: traefik.containo.us/v1alpha1
 kind: IngressRoute
 metadata:
   name: ${APP_NAME}-ingress
   namespace: app-ingress
   annotations:
     kubernetes.io/ingress.class: "traefik-ingress"
+    cert-manager.io/cluster-issuer: kap-vault-issuer
+    cert-manager.io/common-name: ${APP_NAME}.app.dev.local
+    cert-manager.io/private-key-algorithm: "ECDSA"
 spec:
   entryPoints:
   - websecure
   routes:
     - kind: Rule
-      match: PathPrefix(`/${APP_NAME}`)
-      middlewares:
-      - name: ${APP_NAME}-middleware
-        namespace: app-ingress
+      match: Host(`${APP_NAME}.app.dev.local`) && PathPrefix(`/`)
       services:
       - name: ${APP_NAME}-service
         namespace: ${PROJECT_NAME}
         port: web
-  tls: {}
+  tls:
+    hosts:
+    - ${APP_NAME}.app.dev.local
+    secretName: ${APP_NAME}-app-cert

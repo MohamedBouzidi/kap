@@ -46,7 +46,7 @@ spec:
             GITLAB_HOST="gitlab.dev.local"
             echo GITLAB_HOST: $GITLAB_HOST
             GITLAB_AUTH_TOKEN=$(curl --cacert /tmp/gitlab-ca.crt -s -X POST -H "Content-Type: application/json" \
-                                    -d "{\"grant_type\":\"password\",\"username\":\"root\",\"password\":\"${GITLAB_ROOT_PASSWORD}\"}" \
+                                    -d "{\"grant_type\":\"password\",\"username\":\"${GITLAB_ADMIN_USERNAME}\",\"password\":\"${GITLAB_ADMIN_PASSWORD}\"}" \
                                     "https://${GITLAB_HOST}/oauth/token" | sed -E 's/.*"access_token":"?([^,"]*)"?.*/\1/')
             echo GITLAB_AUTH_TOKEN: $GITLAB_AUTH_TOKEN
             GITLAB_AUTH_HEADER="Authorization: Bearer $GITLAB_AUTH_TOKEN"
@@ -71,10 +71,15 @@ spec:
             secretKeyRef:
               name: sonarqube-admin-password
               key: password
-        - name: GITLAB_ROOT_PASSWORD
+        - name: GITLAB_ADMIN_USERNAME
           valueFrom:
             secretKeyRef:
-              name: gitlab-admin-password
+              name: gitlab-admin-user
+              key: username
+        - name: GITLAB_ADMIN_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: gitlab-admin-user
               key: password
         volumeMounts:
         - mountPath: /tmp/gitlab-ca.crt

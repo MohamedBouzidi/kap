@@ -25,11 +25,11 @@ spec:
   minReadySeconds: 0
   template: 
     metadata:
-      annotations:
-        # prometheus.io/scrape: "true"
-        prometheus.io/path: "/metrics"
-        prometheus.io/port: "9100"
-        # sidecar.jaegertracing.io/inject: "true"
+      # annotations:
+      #   prometheus.io/scrape: "true"
+      #   prometheus.io/path: "/metrics"
+      #   prometheus.io/port: "9100"
+      #   sidecar.jaegertracing.io/inject: "true"
       labels:
         app.kubernetes.io/name: traefik
         app.kubernetes.io/instance: traefik-ingress-controller-traefik
@@ -43,6 +43,7 @@ spec:
       - image: traefik:v2.9.5
         imagePullPolicy: IfNotPresent
         name: traefik-ingress-controller
+        args: ["--configfile", "/etc/traefik.yml"]
         resources:
           requests:
             cpu: "100m"
@@ -96,41 +97,17 @@ spec:
             mountPath: /data
           - name: tmp
             mountPath: /tmp
-        args:
-          - "--log.level=DEBUG"
-          - "--accesslog=true"
-          # - "--api=true"
-          # - "--api.dashboard=true"
-          - "--api.insecure"
-          - "--global.checknewversion"
-          - "--global.sendanonymoususage"
-          - "--entrypoints.metrics.address=:9100/tcp"
-          - "--entrypoints.traefik.address=:9000/tcp"
-          - "--entrypoints.web.address=:8000/tcp"
-          - "--entrypoints.websecure.address=:8443/tcp"
-          - "--providers.kubernetescrd"
-          - "--providers.kubernetescrd.namespaces=traefik,app-ingress"
-          - "--providers.kubernetescrd.allowCrossNamespace=true"
-          - "--providers.kubernetescrd.allowExternalNameServices=true"
-          - "--providers.kubernetescrd.ingressClass=traefik-ingress"
-          # - "--providers.kubernetesingress"
-          # - "--providers.kubernetesingress.namespaces=traefik,app-ingress"
-          # - "--providers.kubernetesingress.allowExternalNameServices=true"
-          # - "--providers.kubernetesingress.allowEmptyServices=true"
-          # - "--entrypoints.websecure.http.tls=true"
-          - "--ping=true"
-          - "--metrics.prometheus=true"
-          - "--metrics.prometheus.entrypoint=metrics"
-          - "--metrics.prometheus.addrouterslabels=true"
-          - "--metrics.prometheus.addServicesLabels=true"
-          - "--tracing=true"
-          - "--tracing.jaeger=true"
-          - "--tracing.jaeger.samplingServerURL=http://localhost:5778/sampling"
-          - "--tracing.jaeger.localAgentHostPort=localhost:6831"
+          - name: traefik-config
+            mountPath: /etc/traefik.yml
+            subPath: traefik.yml
+            readOnly: true
       volumes:
         - name: data
           emptyDir: {}
         - name: tmp
           emptyDir: {}
+        - name: traefik-config
+          configMap:
+            name: traefik-config
       securityContext:
         fsGroup: 65532
