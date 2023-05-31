@@ -1,0 +1,44 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: opentelemetry-collector-metrics
+  namespace: monitoring
+  labels:
+    app: opentelemetry-collector-metrics
+    prometheus: monitoring
+spec:
+  endpoints:
+    - interval: 30s
+      path: /metrics
+      port: col-metrics
+  namespaceSelector:
+    matchNames:
+      - monitoring
+  selector:
+    matchLabels:
+      app: opentelemetry-collector-metrics
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: opentelemetry-exporter-metrics
+  namespace: monitoring
+  labels:
+    app: opentelemetry-collector-metrics
+    prometheus: monitoring
+spec:
+  endpoints:
+    - interval: 30s
+      path: /metrics
+      port: metrics-http
+      metricRelabelings: # For Jaeger SPM
+      - sourceLabels: [__name__]
+        targetLabel: __name__
+        regex: duration_milliseconds_(.+)
+        replacement: latency_${1}
+  namespaceSelector:
+    matchNames:
+      - monitoring
+  selector:
+    matchLabels:
+      app: opentelemetry-collector-metrics

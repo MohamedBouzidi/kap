@@ -14,14 +14,38 @@ spec:
     metadata:
       labels:
         app: ${APP_NAME}
+      annotations:
+        app.platform/service: ${APP_NAME}
+        app.platform/project: ${PROJECT_NAME}
+        app.platform/version: ${VERSION}
     spec:
       containers:
         - name: app
-          image: registry.dev.local/${PROJECT_NAME}/${APP_NAME}:latest
+          image: registry.dev.local/${PROJECT_NAME}/${APP_NAME}:${VERSION}
           ports:
           - containerPort: 8090
             protocol: TCP
             name: web
+          env:
+          - name: APP_NAME
+            valueFrom:
+              fieldRef:
+                apiVersion: v1
+                fieldPath: metadata.annotations['app.platform/service']
+          - name: PROJECT_NAME
+            valueFrom:
+              fieldRef:
+                apiVersion: v1
+                fieldPath: metadata.annotations['app.platform/project']
+          - name: APP_VERSION
+            valueFrom:
+              fieldRef:
+                apiVersion: v1
+                fieldPath: metadata.annotations['app.platform/version']
+          - name: OTEL_EXPORTER_OTLP_TRACES_ENDPOINT
+            value: opentelemetry-collector.monitoring.svc:4318
+          - name: OTEL_EXPORTER_OTLP_METRICS_ENDPOINT
+            value: opentelemetry-collector.monitoring.svc:4318
       imagePullSecrets:
       - name: ${APP_NAME}-regcred
 ---

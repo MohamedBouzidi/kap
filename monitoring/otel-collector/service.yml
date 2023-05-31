@@ -1,0 +1,42 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: opentelemetry-collector
+  namespace: monitoring
+  labels:
+    app: opentelemetry-collector
+    release: opentelemetry-collector
+spec:
+  type: ClusterIP
+  selector:
+    app: opentelemetry-collector
+    release: opentelemetry-collector
+  internalTrafficPolicy: Cluster
+  ports:
+  - name: otlp
+    port: 4318
+    targetPort: otel-http
+    protocol: TCP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: opentelemetry-collector-metrics
+  namespace: monitoring
+  labels:
+    app: opentelemetry-collector-metrics
+    release: opentelemetry-collector
+spec:
+  type: ClusterIP
+  selector:
+    app: opentelemetry-collector
+    release: opentelemetry-collector
+  ports:
+  - name: col-metrics
+    port: 8888
+    targetPort: col-metrics
+    protocol: TCP
+  - name: metrics-http
+    port: 8889
+    targetPort: metrics-http
+    protocol: TCP

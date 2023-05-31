@@ -1,0 +1,74 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: opentelemetry-collector-agent
+  namespace: monitoring
+  labels:
+    app: opentelemetry-collector
+    release: opentelemetry-collector
+spec:
+  selector:
+    matchLabels:
+      app: opentelemetry-collector
+      release: opentelemetry-collector
+  updateStrategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: opentelemetry-collector
+        release: opentelemetry-collector
+    spec:
+      serviceAccountName: opentelemetry-collector
+      hostNetwork: false
+      containers:
+      - name: opentelemetry-collector
+        image: otel/opentelemetry-collector-contrib:0.78.0
+        imagePullPolicy: IfNotPresent
+        command: ["/otelcol-contrib", "--config=/conf/collector-config.yml"]
+        ports:
+        - name: otel-http
+          containerPort: 4318
+          protocol: TCP
+        - name: col-metrics
+          containerPort: 8888
+          protocol: TCP
+        - name: metrics-http
+          containerPort: 8889
+          protocol: TCP
+        env:
+        - name: MY_POD_IP
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: status.podIP
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 13133
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 13133
+        volumeMounts:
+        - mountPath: /conf
+          name: opentelemetry-collector-config
+        - mountPath: /var/log/pods
+          name: varlogpods
+          readOnly: true
+        - mountPath: /var/lib/docker/containers
+          name: varlibdockercontainers
+          readOnly: true
+      volumes:
+      - name: opentelemetry-collector-config
+        configMap:
+          name: opentelemetry-collector-config
+          items:
+          - key: collector-config
+            path: collector-config.yml
+      - name: varlogpods
+        hostPath:
+          path: /var/log/pods
+      - name: varlibdockercontainers
+        hostPath:
+          path: /var/lib/docker/containers

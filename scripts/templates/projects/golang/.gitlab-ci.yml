@@ -3,6 +3,13 @@ image: golang:latest
 variables:
   GITLAB_CA:  "/tmp/gitlab-runner/certs/gitlab/ca.crt"
   SONARQUBE_CA: "/tmp/gitlab-runner/certs/sonarqube/ca.crt"
+  DOCKER_HOST: tcp://docker:2376
+  DOCKER_TLS_CERTDIR: "/certs"
+  DOCKER_TLS_VERIFY: 1
+  DOCKER_CERT_PATH: "$DOCKER_TLS_CERTDIR/client"
+
+services:
+  - docker:20.10.16-dind
 
 stages:
   - test
@@ -35,12 +42,14 @@ sonarqube-check:
 
 format:
   stage: test
+  before_script:
+    - go get .
   script:
     - go fmt $(go list ./... | grep -v /vendor/)
     - go vet $(go list ./... | grep -v /vendor/)
     - go test -race $(go list ./... | grep -v /vendor/)
 
-compile:
+.compile:
   stage: build
   script:
     - mkdir -p mybinaries
@@ -49,7 +58,21 @@ compile:
     paths:
       - mybinaries
 
-build:
+dind_build:
+  stage: build
+  image: docker:20.10.16
+  before_script:
+    - docker info
+    - docker login --username ${CI_REGISTRY_USER} --password ${CI_REGISTRY_PASSWORD} ${CI_REGISTRY}
+  script:
+    - docker pull $CI_REGISTRY_IMAGE:${CI_COMMIT_TAG} || true
+    - docker build --cache-from ${CI_REGISTRY_IMAGE}:${CI_COMMIT_TAG} --tag ${CI_PROJECT_NAME} .
+    - docker tag ${CI_PROJECT_NAME} "${CI_REGISTRY_IMAGE}:${CI_COMMIT_TAG}"
+    - docker push "${CI_REGISTRY_IMAGE}:${CI_COMMIT_TAG}"
+  only:
+    - tags
+
+.kaniko_build:
   stage: build
   image:
     name: gcr.io/kaniko-project/executor:v1.9.1-debug

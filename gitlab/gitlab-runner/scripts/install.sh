@@ -3,7 +3,7 @@
 SCRIPT_DIR=$(cd -- "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd)
 SONARQUBE_CA_FILE=$(mktemp)
 
-if kubectl get secret/vault-cert --namespace vault
+if kubectl get secret/vault-cert --namespace vault --no-headers > /dev/null 2>&1
 then
     kubectl create -k $SCRIPT_DIR/..
     kubectl delete secret/sonarqube-ca-secret --namespace gitlab

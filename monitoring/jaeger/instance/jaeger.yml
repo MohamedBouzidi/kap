@@ -7,6 +7,10 @@ metadata:
     app: jaeger-kap
 spec:
   strategy: production
+  ui:
+    options:
+      monitor:
+        menuEnabled: true
   collector:
     maxReplicas: 5
     resources:
@@ -21,7 +25,7 @@ spec:
       type: prometheus
     options:
       prometheus:
-        server-url: "http://prometheus-operated.monitoring.svc:9090"
+        server-url: http://prometheus-operated.monitoring.svc:9090
   storage:
       type: elasticsearch
       options:
