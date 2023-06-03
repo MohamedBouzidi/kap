@@ -16,6 +16,11 @@ kind: Application
 metadata:
   name: $APP_NAME
   namespace: argocd
+  annotations:
+    argocd-image-updater.argoproj.io/write-back-method: git:secret:argocd/${APP_NAME}-credentials
+    argocd-image-updater.argoproj.io/git-branch: main
+    argocd-image-updater.argoproj.io/image-list: ${PROJECT_NAME}_${APP_NAME}=registry.dev.local/${PROJECT_NAME}/${APP_NAME}
+    argocd-image-updater.argoproj.io/${PROJECT_NAME}_${APP_NAME}.force-update: "true"
 spec:
   project: $PROJECT_NAME
   source:
@@ -25,4 +30,11 @@ spec:
   destination:
     server: https://kubernetes.default.svc
     namespace: $PROJECT_NAME
-
+  syncPolicy:
+    automated:
+      prune: true
+      allowEmpty: true
+    syncOptions:
+    - ApplyOutOfSyncOnly=true
+    - ServerSideApply=true
+    - PruneLast=true

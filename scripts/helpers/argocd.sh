@@ -9,6 +9,7 @@ function display_help() {
     echo "  delete_app          Delete ArgoCD app from project"
     echo "  add_gitlab_ca       Add GitLab CA certificate"
     echo "  remove_gitlab_ca    Remove GitLab CA certificate"
+    echo "  get_project_badge   Get ArgoCD sync status badge"
     exit 1
 }
 
@@ -69,9 +70,9 @@ case "$SUBCOMMAND" in
             esac
         done
         add_repository_certificate $GITLAB_HOST
-        envsubst < $TEMPLATES_DIR/project.yml | kubectl apply -f -
+        envsubst < $TEMPLATES_DIR/project.yml | kubectl create -f -
         ;;
-    
+
     "delete_project" )
         if [ "$#" -lt 2 ]; then
             echo "Usage: bash ./argocd.sh delete_project [option...]" >&2
@@ -118,7 +119,7 @@ case "$SUBCOMMAND" in
         export REPOSITORY="${GITLAB_HOST}/${PROJECT_NAME}/${APP_NAME}.git"
         export USERNAME="${APP_NAME}_argocd_token"
         export PASSWORD="$(kubectl get secret/${APP_NAME}-gitlab-argocd-token -o jsonpath='{.data.token}' --namespace ${PROJECT_NAME} | base64 -d)"
-        envsubst < $TEMPLATES_DIR/application.yml | kubectl apply -f -
+        envsubst < $TEMPLATES_DIR/application.yml | kubectl create -f -
         ;;
 
     "delete_app" )
@@ -151,5 +152,28 @@ case "$SUBCOMMAND" in
 
     "remove_gitlab_ca" )
         remove_repository_certificate $GITLAB_HOST
+        ;;
+
+    "get_project_badge" )
+        if [ "$#" -lt 4 ]; then
+            echo "Usage: bash ./argocd.sh get_project_badge [option...]" >&2
+            echo
+            echo "  -a, --argocd-host           ArgoCD host"
+            echo "  -n, --app-name              ArgoCD app name"
+            echo "  -h, --help                  Show help message"
+            exit 1
+        fi
+        VALID_ARGS=$(getopt -o a:n:h --long argocd-host:,app-name:,help -- "$@")
+        eval set -- "$VALID_ARGS"
+        while [ : ]; do
+            case "$1" in
+                -a | --argocd-host  )   export ARGOCD_HOST="$2"; shift 2 ;;
+                -n | --app-name     )   export APP_NAME="$2"; shift 2 ;;
+                -h | --help         )   display_help ;;
+                -- ) shift; break ;;
+                * ) break ;;
+            esac
+        done
+        echo "https://${ARGOCD_HOST}/api/badge?name=${APP_NAME}&revision=true"
         ;;
 esac

@@ -42,10 +42,8 @@ data:
         size_in_percentage: 40
 
     exporters:
-      otlp:
-        endpoint: 'jaeger-kap-collector.jaeger.svc:4317'
-        tls:
-          insecure: true
+      otlphttp:
+        endpoint: http://jaeger-kap-collector-headless.jaeger.svc:4318
       prometheus:
         endpoint:  ${env:MY_POD_IP}:8889
         send_timestamps: true
@@ -64,7 +62,7 @@ data:
         traces:
           receivers: [otlp]
           processors: [memory_limiter, batch]
-          exporters: [spanmetrics, otlp]
+          exporters: [spanmetrics, otlphttp] 
         metrics:
           receivers: [otlp, spanmetrics]
           processors: [memory_limiter, batch]

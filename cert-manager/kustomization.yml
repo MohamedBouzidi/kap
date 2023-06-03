@@ -5,7 +5,7 @@ commonLabels:
   app.kubernetes.io/part-of: cert-manager
 resources:
 - namespace.yml
-- crds/crds.yml
+- crds/
 - rbac/rbac.yml
 - configmap.yml
 - service.yml

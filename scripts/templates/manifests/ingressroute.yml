@@ -1,0 +1,42 @@
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: ${APP_NAME}-app-cert
+  namespace: app-ingress
+spec:
+  isCA: false
+  commonName: ${APP_NAME}.app.dev.local
+  secretName: ${APP_NAME}-app-cert
+  dnsNames:
+    - ${APP_NAME}.app.dev.local
+  privateKey:
+    algorithm: ECDSA
+    size: 256
+  issuerRef:
+    name: kap-vault-issuer
+    kind: ClusterIssuer
+    group: cert-manager.io
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: ${APP_NAME}-ingress
+  namespace: app-ingress
+  annotations:
+    kubernetes.io/ingress.class: "traefik-ingress"
+spec:
+  entryPoints:
+  - websecure
+  routes:
+    - kind: Rule
+      match: Host(`${APP_NAME}.app.dev.local`) && PathPrefix(`/`)
+      services:
+      - name: ${APP_NAME}-service
+        namespace: ${PROJECT_NAME}
+        port: web
+  tls:
+    domains:
+    - main: ${APP_NAME}.app.dev.local
+    secretName: ${APP_NAME}-app-cert
+...

@@ -3,7 +3,6 @@ kind: Kustomization
 namespace: argocd
 resources:
 - crds/crds.yml
-- namespace.yml
 - configmap.yml
 - argocd-redis
 - argocd-repo-server
@@ -11,3 +10,4 @@ resources:
 - argocd-applicationset-controller
 - argocd-application-controller
 - argocd-server
+- argocd-image-updater

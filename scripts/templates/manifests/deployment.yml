@@ -1,0 +1,39 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ${APP_NAME}
+  namespace: ${PROJECT_NAME}
+  labels:
+    app: ${APP_NAME}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ${APP_NAME}
+  template:
+    metadata:
+      labels:
+        app: ${APP_NAME}
+    spec:
+      containers:
+        - name: app
+          image: registry.dev.local/${PROJECT_NAME}/${APP_NAME}:0.0.0
+          ports:
+          - containerPort: 8090
+            protocol: TCP
+            name: web
+          env:
+          - name: APP_NAME
+            value: ${APP_NAME}
+          - name: PROJECT_NAME
+            value: ${PROJECT_NAME}
+          - name: APP_VERSION
+            value: 0.0.0
+          - name: OTEL_EXPORTER_OTLP_TRACES_ENDPOINT
+            value: opentelemetry-collector.monitoring.svc:4318
+          - name: OTEL_EXPORTER_OTLP_METRICS_ENDPOINT
+            value: opentelemetry-collector.monitoring.svc:4318
+      imagePullSecrets:
+      - name: ${APP_NAME}-regcred
+...

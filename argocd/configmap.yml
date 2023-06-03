@@ -7,6 +7,8 @@ metadata:
     app.kubernetes.io/part-of: argocd
   name: argocd-cm
   namespace: argocd
+data:
+  statusbadge.enabled: "true"
 ---
 apiVersion: v1
 kind: ConfigMap

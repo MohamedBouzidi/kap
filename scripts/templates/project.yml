@@ -37,5 +37,7 @@ spec:
     kind: Middleware
   - group: 'traefik.containo.us'
     kind: IngressRoute
+  - group: 'cert-manager.io'
+    kind: Certificate
   orphanedResources:
     warn: false

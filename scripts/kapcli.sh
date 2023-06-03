@@ -20,14 +20,53 @@ function build_app_directory() {
     local APP_TYPE=$3
     local PROJECTS_DIR=$4
     local TEMPLATES_DIR=$5
-    local ARGO_PATH=$6
+    local MANIFESTS_DIR=$6
+    local ARGO_PATH=$7
 
     export APP_DIRECTORY=$(mktemp -d)
     cp $(find $PROJECTS_DIR/$APP_TYPE -type f) $APP_DIRECTORY
     mkdir $APP_DIRECTORY/$ARGO_PATH
-    envsubst < $TEMPLATES_DIR/deploy.yml > $APP_DIRECTORY/$ARGO_PATH/deploy.yml
+    for f in $(find $MANIFESTS_DIR -type f -name "*.yml")
+    do
+        envsubst < $f > $APP_DIRECTORY/$ARGO_PATH/$(basename $f)
+    done
     envsubst < $TEMPLATES_DIR/sonar-project.properties > $APP_DIRECTORY/sonar-project.properties
     echo -ne "# Hello ${APP_NAME}\n\nThis is your new application code." > $APP_DIRECTORY/README.md
+}
+
+function add_app_badges() {
+    local GITLAB_HOST=$1
+    local ARGOCD_HOST=$2
+    local SONARQUBE_HOST=$3
+    local PROJECT_NAME=$4
+    local APP_NAME=$5
+
+    SONARQUBE_BADGE=$(bash $HELPERS_DIR/sonarqube.sh get_project_badge --sonarqube-host $SONARQUBE_HOST --project-name "${PROJECT_NAME}-${APP_NAME}")
+    ARGOCD_BADGE=$(bash $HELPERS_DIR/argocd.sh get_project_badge --argocd-host $ARGOCD_HOST --app-name $APP_NAME)
+
+    bash $HELPERS_DIR/gitlab.sh add_repo_badge --gitlab-host $GITLAB_HOST --repo-name $APP_NAME --badge-name SonarQube --badge-url $SONARQUBE_BADGE
+    bash $HELPERS_DIR/gitlab.sh add_repo_badge --gitlab-host $GITLAB_HOST --repo-name $APP_NAME --badge-name ArgoCD --badge-url $ARGOCD_BADGE
+}
+
+function delete_app_resources() {
+    local GITLAB_HOST=$1
+    local PROJECT_NAME=$2
+    local APP_NAME=$3
+
+    REPO_DIR=$(mktemp -d)
+    GITLAB_ADMIN_USER=$(kubectl get secret/gitlab-admin-user -n gitlab -o jsonpath='{.data}')
+    GITLAB_ADMIN_USERNAME=$(echo $GITLAB_ADMIN_USER | jq -r '.username | @base64d')
+    GITLAB_ADMIN_PASSWORD=$(echo $GITLAB_ADMIN_USER | jq -r '.password | @base64d')
+    pushd $REPO_DIR
+    git init --initial-branch=main
+    git config --local http.sslVerify false
+    git config --local core.sparseCheckout true
+    echo "$ARGO_PATH/" >> .git/info/sparse-checkout
+    git remote add origin https://${GITLAB_ADMIN_USERNAME}:${GITLAB_ADMIN_PASSWORD}@${GITLAB_HOST}/${PROJECT_NAME}/${APP_NAME}.git
+    git pull --depth=1 origin main
+    kubectl --insecure-skip-tls-verify=true delete -k $ARGO_PATH
+    popd
+    rm -rf $REPO_DIR
 }
 
 ############################################
@@ -41,8 +80,10 @@ SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 TEMPLATES_DIR=$SCRIPT_DIR/templates
 HELPERS_DIR=$SCRIPT_DIR/helpers
 PROJECTS_DIR=$TEMPLATES_DIR/projects
+MANIFESTS_DIR=$TEMPLATES_DIR/manifests
 GITLAB_HOST="gitlab.dev.local:9443"
 SONARQUBE_HOST="sonarqube.dev.local:9443"
+ARGOCD_HOST="argocd.dev.local:9443"
 ARGO_PATH="cd"
 
 case "$SUBCOMMAND" in
@@ -134,11 +175,12 @@ case "$SUBCOMMAND" in
                 * ) break ;;
             esac
         done
-        build_app_directory $PROJECT_NAME $APP_NAME $APP_TYPE $PROJECTS_DIR $TEMPLATES_DIR $ARGO_PATH
+        build_app_directory $PROJECT_NAME $APP_NAME $APP_TYPE $PROJECTS_DIR $TEMPLATES_DIR $MANIFESTS_DIR $ARGO_PATH
         bash $HELPERS_DIR/gitlab.sh create_repo --gitlab-host $GITLAB_HOST --group-name $PROJECT_NAME --repo-name $APP_NAME
         bash $HELPERS_DIR/sonarqube.sh create_project --sonarqube-host $SONARQUBE_HOST --project-name "${PROJECT_NAME}-${APP_NAME}"
         bash $HELPERS_DIR/gitlab.sh commit_directory --gitlab-host $GITLAB_HOST --group-name $PROJECT_NAME --repo-name $APP_NAME --directory $APP_DIRECTORY
         bash $HELPERS_DIR/argocd.sh create_app --project-name $PROJECT_NAME --app-name $APP_NAME --argo-path $ARGO_PATH
+        add_app_badges $GITLAB_HOST $ARGOCD_HOST $SONARQUBE_HOST $PROJECT_NAME $APP_NAME
         rm -rf $APP_DIRECTORY
         ;;
 
@@ -162,6 +204,7 @@ case "$SUBCOMMAND" in
                 * ) break ;;
             esac
         done
+        delete_app_resources $GITLAB_HOST $PROJECT_NAME $APP_NAME
         bash $HELPERS_DIR/argocd.sh delete_app --project-name $PROJECT_NAME --app-name $APP_NAME
         bash $HELPERS_DIR/gitlab.sh delete_repo --gitlab-host $GITLAB_HOST --group-name $PROJECT_NAME --repo-name $APP_NAME
         bash $HELPERS_DIR/sonarqube.sh delete_project --sonarqube-host $SONARQUBE_HOST --project-name "${PROJECT_NAME}-${APP_NAME}"

@@ -27,7 +27,7 @@ kubectl apply -f $SCRIPT_DIR/../dashboard/recommended.yaml
 kubectl create -k $SCRIPT_DIR/../traefik-ingress
 kubectl wait -n traefik --for=condition=ready pod --selector=app.kubernetes.io/name=traefik-ingress-controller --timeout=300s
 
-kubectl create -k $SCRIPT_DIR/../argocd
+bash $SCRIPT_DIR/../argocd/scripts/install.sh
 
 bash $SCRIPT_DIR/../gitlab/install.sh
 bash $SCRIPT_DIR/../sonarqube/scripts/install.sh

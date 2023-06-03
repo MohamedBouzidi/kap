@@ -12,10 +12,11 @@ function display_help() {
 	echo "   delete_repo        Delete Gitlab repo from group"
     echo "   list_repos         List all repos in group"
     echo "   commit_directory   Commit directory contents to repo"
+    echo "   add_repo_badge     Add a badge to a Gitlab repo"
 	exit 1
 }
 
-function auth() { 
+function auth() {
     local GITLAB_HOST=$1
 
 	ADMIN_USER=$(kubectl get secret/gitlab-admin-user -n gitlab -o jsonpath='{.data}')
@@ -37,7 +38,11 @@ function create_group() {
 function create_namespace() {
     local NAMESPACE=$1
 
-	kubectl get namespace/${NAMESPACE} > /dev/null 2>&1 || kubectl create namespace ${NAMESPACE}
+	if ! kubectl get namespace/${NAMESPACE} > /dev/null 2>&1
+    then
+        kubectl create namespace ${NAMESPACE}
+        kubectl label namespace/${NAMESPACE} kap-app=client
+    fi
 }
 
 function create_user() {
@@ -71,6 +76,19 @@ function create_project() {
 			"https://$GITLAB_HOST/api/v4/projects" | jq -r ".id")
 }
 
+function add_project_badge() {
+    local GITLAB_HOST=$1
+    local REPO_NAME=$2
+    local BADGE_NAME=$3
+    local BADGE_URL=$4
+
+    PROJECT_ID=$(curl -k -s -X GET -H "$AUTH_HEADER" -H "Content-Type: application/json" \
+        "https://${GITLAB_HOST}/api/v4/projects?search=${REPO_NAME}" | jq -r ".[0].id")
+    BADGE_OUTPUT=$(curl -k -s -X POST -H "$AUTH_HEADER" -H "Content-Type: application/json" \
+        -d "{\"name\":\"$BADGE_NAME\",\"image_url\":\"$BADGE_URL\",\"link_url\":\"$BADGE_URL\"}" \
+        "https://$GITLAB_HOST/api/v4/projects/$PROJECT_ID/badges")
+}
+
 function create_access_token() {
     local GITLAB_HOST=$1
     local GROUP_NAME=$2
@@ -91,8 +109,8 @@ function create_deploy_token() {
     local REPO_NAME=$3
 
     PROJECT_TOKEN=$(curl -k -s -X POST -H "$AUTH_HEADER" -H "Content-Type: application/json" \
-        -d "{ \"name\":\"${REPO_NAME}_argocd_token\", \"scopes\":[\"read_repository\"], \"expires_at\":\"2026-01-31\", \"username\": \"${REPO_NAME}_argocd_token\" }" \
-        "https://$GITLAB_HOST/api/v4/projects/${PROJECT_ID}/deploy_tokens" | jq -r ".token")
+        -d "{ \"name\":\"${REPO_NAME}_argocd_token\", \"scopes\":[\"read_repository\", \"write_repository\"], \"expires_at\":\"2026-01-31\", \"access_level\": 50 }" \
+        "https://$GITLAB_HOST/api/v4/projects/${PROJECT_ID}/access_tokens" | jq -r ".token")
     kubectl create secret generic ${REPO_NAME}-gitlab-argocd-token --from-literal=token=$PROJECT_TOKEN -n ${GROUP_NAME}
 }
 
@@ -419,5 +437,33 @@ case "$SUBCOMMAND" in
         done
         auth $GITLAB_HOST
         commit_directory $GITLAB_HOST $GROUP_NAME $REPO_NAME $DIRECTORY
+        ;;
+
+    "add_repo_badge" )
+        if [ "$#" -lt 8 ]; then
+            echo "Usage: bash ./gitlab.sh add_repo_badge [option...]" >&2
+            echo
+            echo "   -g, --gitlab-host          Gitlab host"
+            echo "   -r, --repo-name            Gitlab repo name"
+            echo "   -b, --badge-name           Badge name"
+            echo "   -u, --badge-url            Badge URL"
+            echo "   -h, --help                 Show help message"
+            exit 1
+        fi
+        VALID_ARGS=$(getopt -o g:r:b:u:h --long gitlab-host:,repo-name:,badge-name:,badge-url:,help -- "$@")
+        eval set -- "$VALID_ARGS"
+        while [ : ]; do
+            case "$1" in
+                -h | --help        )    display_help ;;
+                -g | --gitlab-host )    GITLAB_HOST="$2"; shift 2 ;;
+                -r | --repo-name   )    REPO_NAME="$2"; shift 2 ;;
+                -b | --badge-name  )    BADGE_NAME="$2"; shift 2 ;;
+                -u | --badge-url   )    BADGE_URL="$2"; shift 2 ;;
+                -- ) shift; break ;;
+                * ) break ;;
+            esac
+        done
+        auth $GITLAB_HOST
+        add_project_badge $GITLAB_HOST $REPO_NAME $BADGE_NAME $BADGE_URL
         ;;
 esac
