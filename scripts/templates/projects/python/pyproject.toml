@@ -1,0 +1,29 @@
+[tool.poetry]
+name = "code"
+version = "0.1.0"
+description = ""
+authors = ["Your Name <you@example.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.9"
+fastapi = "^0.96.0"
+uvicorn = {extras = ["standard"], version = "^0.22.0"}
+opentelemetry-api = "^1.18.0"
+opentelemetry-sdk = "^1.18.0"
+opentelemetry-exporter-otlp-proto-http = "^1.18.0"
+opentelemetry-instrumentation-fastapi = "^0.39b0"
+
+
+[tool.poetry.group.dev.dependencies]
+httpx = "^0.24.1"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[virtualenvs]
+in-project = true
+create = true
+path = ".env"
+

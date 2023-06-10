@@ -24,7 +24,7 @@ function build_app_directory() {
     local ARGO_PATH=$7
 
     export APP_DIRECTORY=$(mktemp -d)
-    cp $(find $PROJECTS_DIR/$APP_TYPE -type f) $APP_DIRECTORY
+    cp -r $(find $PROJECTS_DIR/$APP_TYPE -maxdepth 1 -mindepth 1) $APP_DIRECTORY
     mkdir $APP_DIRECTORY/$ARGO_PATH
     for f in $(find $MANIFESTS_DIR -type f -name "*.yml")
     do

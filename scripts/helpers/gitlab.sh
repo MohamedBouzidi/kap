@@ -208,17 +208,22 @@ function commit_directory() {
     local DIRECTORY=$4
     local PAYLOAD='{"branch": "main", "commit_message": "Initial Commit", "actions": []}'
 
+    PAYLOAD_FILE=$(mktemp)
+    PAYLOAD_TEMP=$(mktemp)
+    echo $PAYLOAD >> $PAYLOAD_FILE
     for f in $(find $DIRECTORY -type f)
     do
         filename=$(echo $f | awk -F"$DIRECTORY/" '{print $2}')
-        PAYLOAD=$(echo $PAYLOAD | jq -r --arg filename "$filename" --rawfile content $DIRECTORY/$filename '.actions[.actions | length] |= . + {"action":"create","file_path":$filename,"content":($content | @base64),"encoding":"base64"}')
+        jq -r --arg filename "$filename" --rawfile content $DIRECTORY/$filename '.actions[.actions | length] |= . + {"action":"create","file_path":$filename,"content":($content | @base64),"encoding":"base64"}' $PAYLOAD_FILE > $PAYLOAD_TEMP
+        cp $PAYLOAD_TEMP $PAYLOAD_FILE
     done
 
     GROUP_ID=$(curl -k -s -X GET -H "$AUTH_HEADER" -H "Content-Type: application/json" \
         "https://${GITLAB_HOST}/api/v4/groups?search=${GROUP_NAME}" | jq -r ".[0].id")
     PROJECT_ID=$(curl -k -s -X GET -H "$AUTH_HEADER" -H "Content-Type: application/json" \
         "https://${GITLAB_HOST}/api/v4/groups/${GROUP_ID}/projects?search=${REPO_NAME}" | jq -r ".[0].id")
-    curl -k -s -X POST -H "$AUTH_HEADER" -H "Content-Type: application/json" -d "$PAYLOAD" "https://${GITLAB_HOST}/api/v4/projects/${PROJECT_ID}/repository/commits" > /dev/null 2>&1
+    curl -k -s -X POST -H "$AUTH_HEADER" -H "Content-Type: application/json" -d "@${PAYLOAD_FILE}" "https://${GITLAB_HOST}/api/v4/projects/${PROJECT_ID}/repository/commits" > /dev/null 2>&1
+    rm $PAYLOAD_FILE $PAYLOAD_TEMP
 }
 
 ############################################

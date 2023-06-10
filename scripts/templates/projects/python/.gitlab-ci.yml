@@ -1,0 +1,68 @@
+variables:
+  GITLAB_CA:  "/tmp/gitlab-runner/certs/gitlab/ca.crt"
+  SONARQUBE_CA: "/tmp/gitlab-runner/certs/sonarqube/ca.crt"
+  DOCKER_HOST: tcp://docker:2376
+  DOCKER_TLS_CERTDIR: "/certs"
+  DOCKER_TLS_VERIFY: 1
+  DOCKER_CERT_PATH: "$DOCKER_TLS_CERTDIR/client"
+
+services:
+  - docker:20.10.16-dind
+
+stages:
+  - test
+  - pre_build
+  - build
+
+sonarqube-check:
+  stage: test
+  image: 
+    name: sonarsource/sonar-scanner-cli:4.8.0
+    entrypoint: [""]
+  variables:
+    SONAR_USER_HOME: "${CI_PROJECT_DIR}/.sonar"  # Defines the location of the analysis task cache
+    GIT_DEPTH: "0"  # Tells git to fetch all the branches of the project, required by the analysis task
+  before_script:
+    - mkdir -p ${SONAR_USER_HOME} && chown -R scanner-cli:scanner-cli ${SONAR_USER_HOME}
+    - keytool -importcert -file "${GITLAB_CA}" -alias gitlab -cacerts -storepass changeit -trustcacerts -noprompt
+    - keytool -importcert -file "${SONARQUBE_CA}" -alias sonarqube -cacerts -storepass changeit -trustcacerts -noprompt
+    - mkdir .scannerwork && chown 1000:1000 .scannerwork
+  cache:
+    key: "${CI_JOB_NAME}"
+    paths:
+      - .sonar/cache
+  script: 
+    - sonar-scanner
+  allow_failure: true
+  rules:
+    - if: $CI_COMMIT_BRANCH == 'main'
+
+generate_dependencies:
+  stage: pre_build
+  image: python:3.9-alpine
+  variables:
+    POETRY_HOME: /opt
+  before_script:
+    - apk update && apk add curl
+    - curl -sSL https://install.python-poetry.org | python3
+  script:
+    - ${POETRY_HOME}/bin/poetry export --without-hashes --format=requirements.txt > ${CI_PROJECT_DIR}/requirements.txt
+  artifacts:
+    paths:
+      - ${CI_PROJECT_DIR}/requirements.txt
+
+dind_build:
+  stage: build
+  image: docker:20.10.16
+  dependencies:
+    - generate_dependencies
+  before_script:
+    - docker info
+    - docker login --username ${CI_REGISTRY_USER} --password ${CI_REGISTRY_PASSWORD} ${CI_REGISTRY}
+  script:
+    - docker pull $CI_REGISTRY_IMAGE:${CI_COMMIT_TAG} || true
+    - docker build --cache-from ${CI_REGISTRY_IMAGE}:${CI_COMMIT_TAG} --tag ${CI_PROJECT_NAME} .
+    - docker tag ${CI_PROJECT_NAME} "${CI_REGISTRY_IMAGE}:${CI_COMMIT_TAG}"
+    - docker push "${CI_REGISTRY_IMAGE}:${CI_COMMIT_TAG}"
+  only:
+    - tags
