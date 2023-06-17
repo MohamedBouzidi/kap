@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: keycloak-config
+  namespace: keycloak
+data:
+  KC_PROXY: "edge"
+  KC_HOSTNAME: "keycloak.dev.local:9443"
+  KC_HOSTNAME_ADMIN: "keycloak.dev.local:9443"
+  # KC_HOSTNAME_PORT: "9443"
+  KC_METRICS_ENABLED: "true"
+  KC_HEALTH_ENABLED: "true"
+  KC_DB: "postgres"
+  KC_DB_URL: "jdbc:postgresql://keycloak-postgresql.keycloak.svc:5432/keycloak"
+  KEYCLOAK_POSTGRESQL_HOST: "keycloak-postgresql.keycloak.svc"

@@ -1,0 +1,5 @@
+[flake8]
+per-file-ignores = tests/*:S101
+select = B,B9,BLK,C,E,F,I,S,W
+ignore = E203,W503
+max-complexity = 10

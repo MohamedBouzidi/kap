@@ -1,0 +1,47 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: keycloak-init
+  namespace: keycloak
+  labels:
+    app: keycloak
+    release: keycloak
+    role: init-job
+spec:
+  template:
+    metadata:
+      labels:
+        app: keycloak
+        release: keycloak
+        role: init-job
+    spec:
+      restartPolicy: OnFailure
+      securityContext:
+        fsGroup: 1000
+      initContainers:
+      - name: wait-for-keycloak
+        image: curlimages/curl:8.1.0
+        command: ["sh", "-c"]
+        args:
+          - |
+            until curl --connect-timeout 100 "keycloak:8080/health" | grep -q -e '"status": "UP"'; do sleep 10; done
+      - name: keycloak-update-master-realm
+        image: quay.io/keycloak/keycloak:21.1.1
+        command: ["sh", "-c"]
+        args:
+          - |
+            alias kcadm=/opt/keycloak/bin/kcadm.sh
+            kcadm config credentials --server http://keycloak:8080 --realm master --user $KEYCLOAK_ADMIN --password $KEYCLOAK_ADMIN_PASSWORD
+            MASTER_REALM_CLIENT_ID=$(kcadm get clients --query clientId="master-realm" --fields id | sed -nE 's/.*"id" "?([^,"]*)"?.*/\1/p' | tr -d '\n')
+            kcadm update client/$MASTER_REALM_CLIENT_ID --set 'webOrigins=["https://keycloak.dev.local:9443"]' --set 'redirectUris=["*"]'
+            ADMIN_CONSOLE_CLIENT_ID=$(kcadm get clients --query clientId="security-admin-console" --fields id | sed -nE 's/.*"id" : "?([^,"]*)"?.*/\1/p' | tr -d '\n')
+            kcadm update clients/$ADMIN_CONSOLE_CLIENT_ID --set 'webOrigins=["https://keycloak.dev.local:9443"]' --set 'redirectUris=["*"]'
+        envFrom:
+        - secretRef:
+            name: keycloak-admin-user
+        - configMapRef:
+            name: keycloak-config
+      containers:
+      - name: finish
+        image: busybox:1.32
+        command: ["sh", "-c", "echo Keycloak init finished."]

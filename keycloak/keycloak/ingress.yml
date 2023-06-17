@@ -1,0 +1,32 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: keycloak
+  namespace: keycloak
+  labels:
+    app: keycloak
+    release: keycloak
+  annotations:
+    cert-manager.io/cluster-issuer: "kap-vault-issuer"
+    cert-manager.io/common-name: "keycloak.dev.local"
+    cert-manager.io/private-key-algorithm: "ECDSA"
+    cert-manager.io/private-key-size: "256"
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      add_header X-Frame-Options "SAMEORIGIN";
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: keycloak.dev.local
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: keycloak
+            port:
+              number: 8080
+  tls:
+  - hosts:
+    - keycloak.dev.local
+    secretName: keycloak-tls

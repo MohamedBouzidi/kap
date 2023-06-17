@@ -1,11 +1,12 @@
 from contextlib import asynccontextmanager
 
+import uvicorn
 from fastapi import Depends, FastAPI
 from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 
-from .dependencies import get_query_token, get_token_header
-from .internal import admin, telemetry
-from .routers import items, users
+from src.dependencies import get_query_token, get_token_header
+from src.internal import admin, telemetry
+from src.routers import items, users
 
 
 @asynccontextmanager
@@ -17,6 +18,7 @@ async def lifespan(app: FastAPI):
     # Shutdown telemetry
     telemetry.shutdown_tracer()
     telemetry.shutdown_meter()
+
 
 # app = FastAPI(dependencies=[Depends(get_query_token)], lifespan=lifespan)
 app = FastAPI(lifespan=lifespan)
@@ -31,6 +33,7 @@ app.include_router(
     responses={418: {"description": "I'm a teapot"}},
 )
 
+
 @app.get("/")
 async def root():
     return {"message": "Hello Bigger Applications!"}
@@ -38,5 +41,8 @@ async def root():
 FastAPIInstrumentor.instrument_app(
     app=app,
     tracer_provider=telemetry.get_tracer_provider(),
-    meter_provider=telemetry.get_meter_provider()
+    meter_provider=telemetry.get_meter_provider(),
 )
+
+def start_local():
+    uvicorn.run("src.main:app", host="127.0.0.1", port=8090, reload=True)

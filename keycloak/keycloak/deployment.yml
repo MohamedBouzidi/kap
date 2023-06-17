@@ -1,0 +1,94 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: keycloak
+  labels:
+    app: keycloak
+    release: keycloak
+    role: web
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: keycloak
+      release: keycloak
+      role: web
+  template:
+    metadata:
+      labels:
+        app: keycloak
+        release: keycloak
+        role: web
+    spec:
+      initContainers:
+      - name: wait-for-db
+        image: busybox:1.32
+        imagePullPolicy: IfNotPresent
+        securityContext:
+          privileged: false
+        resources:
+          limits:
+            cpu: 50m
+            memory: 50Mi
+        command: ["/bin/sh", "-c", "for i in $(seq 1 200); do nc -z -w3 $KEYCLOAK_POSTGRESQL_HOST 5432 && exit 0 || sleep 2; done; exit 1"]
+        env:
+          - name: KEYCLOAK_POSTGRESQL_HOST
+            valueFrom:
+              configMapKeyRef:
+                name: keycloak-config
+                key: KEYCLOAK_POSTGRESQL_HOST
+      - name: build-keycloak
+        image: quay.io/keycloak/keycloak:21.1.1
+        command: ["bash", "-c"]
+        args:
+          - |
+            /opt/keycloak/bin/kc.sh build
+            cp -r /opt/keycloak/* /tmp/keycloak/
+        resources:
+          requests:
+            cpu: 250m
+            memory: 300Mi
+          limits:
+            cpu: 350m
+            memory: 600Mi
+        envFrom:
+        - secretRef:
+            name: keycloak-admin-user
+        - secretRef:
+            name: keycloak-db-user
+        - configMapRef:
+            name: keycloak-config
+        volumeMounts:
+          - name: keycloak-data
+            mountPath: /tmp/keycloak
+      containers:
+      - name: keycloak
+        image: quay.io/keycloak/keycloak:21.1.1
+        args: ["start", "--optimized"]
+        resources:
+          requests:
+            cpu: 250m
+            memory: 300Mi
+          limits:
+            cpu: 350m
+            memory: 600Mi
+        envFrom:
+        - secretRef:
+            name: keycloak-admin-user
+        - secretRef:
+            name: keycloak-db-user
+        - configMapRef:
+            name: keycloak-config
+        ports:
+        - name: http
+          containerPort: 8080
+        readinessProbe:
+          httpGet:
+            path: /realms/master
+            port: 8080
+        volumeMounts:
+          - name: keycloak-data
+            mountPath: /opt/keycloak
+      volumes:
+        - name: keycloak-data
+          emptyDir: {}

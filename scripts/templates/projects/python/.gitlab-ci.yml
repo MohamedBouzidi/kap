@@ -10,9 +10,55 @@ services:
   - docker:20.10.16-dind
 
 stages:
+  - lint
   - test
   - pre_build
   - build
+
+.install_poetry: &install_poetry
+  variables:
+    POETRY_HOME: /opt
+  before_script:
+    - apk update && apk add curl
+    - curl -sSL https://install.python-poetry.org | python3
+    - ${POETRY_HOME}/bin/poetry install
+    - export PATH=${POETRY_HOME}/bin:${PATH}
+
+linting:
+  stage: lint
+  image: python:3.10-alpine
+  <<: *install_poetry
+  script:
+    - poetry run nox -rs lint black
+  cache:
+    key: "${CI_BUILD_REF}"
+    untracked: true
+  allow_failure: true
+
+tests:
+  stage: test
+  image: python:3.10-alpine
+  <<: *install_poetry
+  script:
+    - poetry run nox -rs tests -- -- --junitxml=report.xml
+  cache:
+    key: "${CI_BUILD_REF}"
+    untracked: true
+  artifacts:
+    when: always
+    reports:
+      junit: report.xml
+
+dependency_security:
+  stage: test
+  image: python:3.10-alpine
+  <<: *install_poetry
+  script:
+    - poetry run nox -rs safety
+  cache:
+    key: "${CI_BUILD_REF}"
+    untracked: true
+  allow_failure: true
 
 sonarqube-check:
   stage: test
@@ -39,17 +85,18 @@ sonarqube-check:
 
 generate_dependencies:
   stage: pre_build
-  image: python:3.9-alpine
-  variables:
-    POETRY_HOME: /opt
-  before_script:
-    - apk update && apk add curl
-    - curl -sSL https://install.python-poetry.org | python3
+  image: python:3.10-alpine
+  <<: *install_poetry
   script:
     - ${POETRY_HOME}/bin/poetry export --without-hashes --format=requirements.txt > ${CI_PROJECT_DIR}/requirements.txt
   artifacts:
     paths:
       - ${CI_PROJECT_DIR}/requirements.txt
+  cache:
+    key: "${CI_BUILD_REF}"
+    untracked: true
+  only:
+    - tags
 
 dind_build:
   stage: build
@@ -60,7 +107,7 @@ dind_build:
     - docker info
     - docker login --username ${CI_REGISTRY_USER} --password ${CI_REGISTRY_PASSWORD} ${CI_REGISTRY}
   script:
-    - docker pull $CI_REGISTRY_IMAGE:${CI_COMMIT_TAG} || true
+    - docker pull ${CI_REGISTRY_IMAGE}:${CI_COMMIT_TAG} || true
     - docker build --cache-from ${CI_REGISTRY_IMAGE}:${CI_COMMIT_TAG} --tag ${CI_PROJECT_NAME} .
     - docker tag ${CI_PROJECT_NAME} "${CI_REGISTRY_IMAGE}:${CI_COMMIT_TAG}"
     - docker push "${CI_REGISTRY_IMAGE}:${CI_COMMIT_TAG}"

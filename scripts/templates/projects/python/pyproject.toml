@@ -1,22 +1,29 @@
 [tool.poetry]
-name = "code"
+name = "src"
 version = "0.1.0"
-description = ""
+description = "My FastAPI app"
 authors = ["Your Name <you@example.com>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = "^3.9"
-fastapi = "^0.96.0"
-uvicorn = {extras = ["standard"], version = "^0.22.0"}
+python = "^3.10"
+fastapi = "^0.96.1"
 opentelemetry-api = "^1.18.0"
 opentelemetry-sdk = "^1.18.0"
 opentelemetry-exporter-otlp-proto-http = "^1.18.0"
 opentelemetry-instrumentation-fastapi = "^0.39b0"
-
+uvicorn = "^0.22.0"
 
 [tool.poetry.group.dev.dependencies]
-httpx = "^0.24.1"
+nox = "^2023.4.22"
+
+[tool.pytest.ini_options]
+pythonpath = [
+  "src",
+]
+
+[tool.poetry.scripts]
+start = "src.main:start_local"
 
 [build-system]
 requires = ["poetry-core"]
@@ -27,3 +34,12 @@ in-project = true
 create = true
 path = ".env"
 
+[tool.coverage.paths]
+source = ["src", "*/site-packages"]
+
+[tool.coverage.run]
+branch = true
+source = ["."]
+
+[tool.coverage.report]
+show_missing = true

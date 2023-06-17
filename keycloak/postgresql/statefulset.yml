@@ -1,34 +1,33 @@
----
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: sonarqube-postgresql
-  namespace: sonarqube
+  name: keycloak-postgresql
+  namespace: keycloak
   labels:
     app: postgresql
-    release: sonarqube
+    release: keycloak
 spec:
-  serviceName: sonarqube-postgresql-headless
+  serviceName: keycloak-postgresql-headless
   replicas: 1
   updateStrategy:
     type: RollingUpdate
   selector:
     matchLabels:
       app: postgresql
-      release: sonarqube
+      release: keycloak
       role: master
   template:
     metadata:
-      name: sonarqube-postgresql
+      name: keycloak-postgresql
       labels:
         app: postgresql
-        release: sonarqube
+        release: keycloak
         role: master
     spec:
       securityContext:
         fsGroup: 1001
       containers:
-        - name: sonarqube-postgresql
+        - name: keycloak-postgresql
           image: docker.io/bitnami/postgresql:12.7.0
           imagePullPolicy: IfNotPresent
           resources:
@@ -49,11 +48,11 @@ spec:
             - name: POSTGRES_POSTGRES_PASSWORD_FILE
               value: "/opt/bitnami/postgresql/secrets/postgresql-postgres-password"
             - name: POSTGRES_USER
-              value: "sonarUser"
+              value: "keycloak"
             - name: POSTGRES_PASSWORD_FILE
               value: "/opt/bitnami/postgresql/secrets/postgresql-password"
             - name: POSTGRES_DB
-              value: "sonarDB"
+              value: "keycloak"
             - name: POSTGRESQL_ENABLE_LDAP
               value: "no"
           ports:
@@ -64,7 +63,7 @@ spec:
               command:
                 - /bin/sh
                 - -c
-                - exec pg_isready -U "sonarUser" -d "sonarDB" -h 127.0.0.1 -p 5432
+                - exec pg_isready -U "keycloak" -d "keycloak" -h 127.0.0.1 -p 5432
             initialDelaySeconds: 30
             periodSeconds: 10
             timeoutSeconds: 5
@@ -77,8 +76,8 @@ spec:
                 - -c
                 - -e
                 - |
-                  exec pg_isready -U "sonarUser" -d "sonarDB" -h 127.0.0.1 -p 5432
-                  [ -f /opt/bitnami/postgresql/tmp/.initialized ] || [ -f /bitnami/postgresql/.initialized ]
+                  exec pg_isready -U "keycloak" -d "keycloak" -h 127.0.0.1 -p 5432
+                  [ -f /opt/bitnami/postgresql/tmp/.initialized ] || [ -f /bitnami/postgresql/.initilaized ]
             initialDelaySeconds: 5
             periodSeconds: 10
             timeoutSeconds: 5
@@ -94,16 +93,16 @@ spec:
             - name: data
               mountPath: /bitnami/postgresql
               subPath: 
-            - mountPath: /docker-entrypoint-preinitdb.d/init_revision.sh
-              name: custom-init-scripts
+            - name: custom-init-scripts
+              mountPath: /docker-entrypoint-initdb.d/init_revision.sh
               subPath: init_revision.sh
       volumes:
         - name: postgresql-password
           secret:
-            secretName: sonarqube-postgresql-password
+            secretName: keycloak-postgresql-password
         - name: custom-init-scripts
           configMap:
-            name: sonarqube-postgresql-init-db
+            name: keycloak-postgresql-init-db
         - name: dshm
           emptyDir:
             medium: Memory
@@ -116,4 +115,4 @@ spec:
           - ReadWriteOnce
         resources:
           requests:
-            storage: "4Gi"
+            storage: "2Gi"
