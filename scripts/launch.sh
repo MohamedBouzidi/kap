@@ -27,11 +27,13 @@ kubectl apply -f $SCRIPT_DIR/../dashboard/recommended.yaml
 kubectl create -k $SCRIPT_DIR/../traefik-ingress
 kubectl wait -n traefik --for=condition=ready pod --selector=app.kubernetes.io/name=traefik-ingress-controller --timeout=300s
 
-bash $SCRIPT_DIR/../argocd/scripts/install.sh
+kubectl create -k $SCRIPT_DIR/../keycloak
+kubectl wait -n keycloak --for=condition=ready pod --selector=app=keycloak --selector=release=keycloak --selector=role=web --timeout=300s
 
 bash $SCRIPT_DIR/../gitlab/install.sh
 bash $SCRIPT_DIR/../sonarqube/scripts/install.sh
 bash $SCRIPT_DIR/../gitlab/gitlab-runner/scripts/install.sh
+bash $SCRIPT_DIR/../argocd/scripts/install.sh
 
 # kubectl create -k $SCRIPT_DIR/../jenkins
 # kubectl wait -n jenkins --for=condition=ready pod --selector=app.kubernetes.io/name=jenkins --timeout=360s

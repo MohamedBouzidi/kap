@@ -11,9 +11,7 @@ metadata:
     release: gitlab
     heritage: Helm
     gitlab.com/webservice-name: default
-    
   annotations:
-    
 spec:
   # Don't provide replicas when HPA are present
   # replicas: 2
@@ -21,8 +19,6 @@ spec:
     matchLabels:
       app: webservice
       release: gitlab
-      
-      
       gitlab.com/webservice-name: default
   template:
     metadata:
@@ -43,8 +39,6 @@ spec:
         prometheus.io/port: "8083"
         prometheus.io/path: /metrics
     spec:
-      
-      
       securityContext:
         runAsUser: 1000
         fsGroup: 1000
@@ -62,12 +56,9 @@ spec:
                   gitlab.com/webservice-name: default
       automountServiceAccountToken: false
       initContainers:
-        
         - name: certificates
           image: "registry.gitlab.com/gitlab-org/build/cng/alpine-certificates:20191127-r2@sha256:367d437d024d7647432d67fb2442e3e5723af5930bad77d3535f4f8f4f8630d9"  
           env:
-          
-          
           volumeMounts:
           - name: etc-ssl-certs
             mountPath: /etc/ssl/certs
@@ -83,12 +74,7 @@ spec:
           args: [ '-c', 'sh -x /config-webservice/configure ; sh -x /config-workhorse/configure ; mkdir -p -m 3770 /tmp/gitlab']
           image: "registry.gitlab.com/gitlab-org/cloud-native/mirror/images/busybox:latest"          
           env:
-            
-            
           volumeMounts:
-          
-          
-          
           - name: webservice-config
             mountPath: /config-webservice
             readOnly: true
@@ -125,10 +111,7 @@ spec:
               value: "1"
             - name: ENABLE_BOOTSNAP
               value: "1"
-            
-            
           volumeMounts:
-            
             - name: etc-ssl-certs
               mountPath: /etc/ssl/certs/
               readOnly: true
@@ -146,9 +129,8 @@ spec:
               readOnly: true
           resources:
             requests:
-              cpu: 50m      
+              cpu: 50m
       containers:
-        
         - name: webservice
           image: registry.gitlab.com/gitlab-org/build/cng/gitlab-webservice-ee:v15.6.2          
           ports:
@@ -187,11 +169,8 @@ spec:
               value: "true"
             - name: SHUTDOWN_BLACKOUT_SECONDS
               value: "10"
-            
             - name: WORKHORSE_ARCHIVE_CACHE_DISABLED
               value: "true"
-            
-            
           volumeMounts:
             - name: webservice-metrics
               mountPath: '/metrics'
@@ -206,7 +185,6 @@ spec:
             - name: webservice-config
               mountPath: '/etc/krb5.conf'
               subPath: krb5.conf
-            
             - name: webservice-config
               mountPath: '/srv/gitlab/config/initializers/smtp_settings.rb'
               subPath: smtp_settings.rb
@@ -225,7 +203,6 @@ spec:
             - name: etc-pki-ca-trust-extracted-pem
               mountPath: /etc/pki/ca-trust/extracted/pem
               readOnly: true
-            
           livenessProbe:
             httpGet:
               path: /-/liveness
@@ -272,9 +249,6 @@ spec:
               value: '/var/opt/gitlab/templates'
             - name: CONFIG_DIRECTORY
               value: '/srv/gitlab/config'
-            
-            
-            
           volumeMounts:
             - name: workhorse-config
               mountPath: '/var/opt/gitlab/templates'
@@ -293,8 +267,6 @@ spec:
             - name: etc-pki-ca-trust-extracted-pem
               mountPath: /etc/pki/ca-trust/extracted/pem
               readOnly: true
-            
-            
           livenessProbe:
             exec:
               command:
@@ -318,10 +290,6 @@ spec:
               cpu: 100m
               memory: 100M
       volumes:
-      
-      
-      
-      
       - name: shared-tmp
         emptyDir: {}
       - name: webservice-metrics
@@ -354,8 +322,6 @@ spec:
               items:
                 - key: "token"
                   path: gitaly/gitaly_token
-          
-          
           - secret:
               name: "gitlab-redis-secret"
               items:
@@ -381,7 +347,6 @@ spec:
               items:
                 - key: "shared_secret"
                   path: gitlab-workhorse/secret
-          
           # mount secret for kas
           - secret:
               name: "gitlab-gitlab-kas-secret"
@@ -407,7 +372,11 @@ spec:
           # mount secret for dependency_proxy
           # mount secret for pages
           # mount secrets for LDAP
-          
+          - secret:
+              name: "gitlab-saml-provider"
+              items:
+                - key: keycloak-saml
+                  path: omniauth/gitlab-saml-provider/keycloak-saml
       - name: webservice-secrets
         emptyDir:
           medium: "Memory"
@@ -416,7 +385,6 @@ spec:
           medium: "Memory"
       - name: shared-upload-directory
         emptyDir: {}
-      
       - name: etc-ssl-certs
         emptyDir:
           medium: "Memory"

@@ -1,9 +1,8 @@
 #!/bin/env bash
 
-DOCKER_IP=$(dig +short host.docker.internal)
-
 cat <<EOF >> /etc/hosts
-${DOCKER_IP} gitlab.dev.local
-${DOCKER_IP} argocd.dev.local
-${DOCKER_IP} sonarqube.dev.local
+${KIND_IP} gitlab.dev.local
+${KIND_IP} argocd.dev.local
+${KIND_IP} sonarqube.dev.local
+${KIND_IP} keycloak.dev.local
 EOF

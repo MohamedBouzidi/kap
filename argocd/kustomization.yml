@@ -3,7 +3,6 @@ kind: Kustomization
 namespace: argocd
 resources:
 - crds/crds.yml
-- configmap.yml
 - argocd-redis
 - argocd-repo-server
 - argocd-notifications-controller

@@ -10,12 +10,10 @@ metadata:
     chart: webservice-6.6.2
     release: gitlab
     heritage: Helm
-    
 data:
   installation_type: |
     gitlab-helm-chart
   database.yml.erb: |
-    
     production:
       main:
         adapter: postgresql
@@ -34,29 +32,19 @@ data:
         application_name: 
         prepared_statements: false
         database_tasks: true
-        
-        
   krb5.conf: |
-    
+
   smtp_settings.rb: |
-    
+
   resque.yml.erb: |
     production:
       url: redis://:<%= ERB::Util::url_encode(File.read("/etc/gitlab/redis/redis-password").strip) %>@gitlab-redis-master.gitlab.svc:6379
-      
       id:
-  
-  
-  
   cable.yml.erb: |
     production:
       url: redis://:<%= ERB::Util::url_encode(File.read("/etc/gitlab/redis/redis-password").strip) %>@gitlab-redis-master.gitlab.svc:6379
-      
       id:
       adapter: redis
-  
-  
-  
   gitlab.yml.erb: |
     production: &base
       gitlab:
@@ -80,22 +68,16 @@ data:
           container_registry: true
         webhook_timeout: 
         trusted_proxies:
-        time_zone: "UTC"        
+        time_zone: "UTC"
         email_from: "gitlab@dev.local"
         email_display_name: "GitLab"
         email_reply_to: "noreply@dev.local"
         email_subject_suffix: ""
-      
+        signup_enabled: false
       gravatar:
         plain_url: 
         ssl_url: 
       extra:
-        
-        
-        
-        
-        
-        
       artifacts:
         enabled: true
         object_store:
@@ -177,7 +159,6 @@ data:
           enabled: false
           remote_directory: gitlab-dependency-proxy
           proxy_download: true
-      
       sentry:
         enabled: false
         dsn: 
@@ -186,7 +167,6 @@ data:
       gitlab_docs:
         enabled: false
         host: ""
-      
       sidekiq:
       pages:
         enabled: false
@@ -218,16 +198,15 @@ data:
       gitlab_ci:
       ldap:
         enabled: false
-      
       omniauth:
-        enabled: false
+        enabled: true
         sync_profile_from_provider: []
         sync_profile_attributes: ["email"]
         allow_single_sign_on: ["saml"]
         block_auto_created_users: true
-        auto_link_ldap_user: false
         auto_link_saml_user: false
-        external_providers: []
+        providers:
+        - <%= YAML.load_file('/etc/gitlab/omniauth/gitlab-saml-provider/keycloak-saml').to_json %>
       kerberos:
         enabled: false
         keytab: /etc/krb5.keytab
@@ -244,7 +223,6 @@ data:
           default:
             path: /var/opt/gitlab/repo
             gitaly_address: tcp://gitlab-gitaly-0.gitlab-gitaly.gitlab.svc:8075
-          
       backup:
         path: "tmp/backups"   # Relative paths are relative to Rails.root (default: tmp/backups/)
       gitlab_kas:

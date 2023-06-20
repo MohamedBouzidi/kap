@@ -86,9 +86,18 @@ spec:
           httpGet:
             path: /realms/master
             port: 8080
+          initialDelaySeconds: 20
+          periodSeconds: 10
+          failureThreshold: 5
+          timeoutSeconds: 5
         volumeMounts:
           - name: keycloak-data
             mountPath: /opt/keycloak
+          - name: keycloak-helper-scripts
+            mountPath: /opt/scripts
       volumes:
         - name: keycloak-data
           emptyDir: {}
+        - name: keycloak-helper-scripts
+          configMap:
+            name: keycloak-helper-scripts

@@ -3,7 +3,7 @@
 SCRIPT_DIR=$(cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd)
 GITLAB_CA_FILE=$(mktemp)
 
-kubectl create -k $SCRIPT_DIR/..
+kubectl create -f $SCRIPT_DIR/../namespace.yml
 
 kubectl delete secret/gitlab-ca-cert --namespace sonarqube
 kubectl get secret/gitlab-ca-secret --namespace gitlab -o jsonpath='{.data.ca\.crt}' | base64 -d > $GITLAB_CA_FILE
@@ -17,5 +17,7 @@ kubectl create secret generic gitlab-admin-user --type=Opaque --from-literal=use
 
 rm $GITLAB_CA_FILE
 
+kubectl create -k $SCRIPT_DIR/..
 kubectl wait -n sonarqube --for=condition=ready pod --selector=release=sonarqube --selector=app=postgresql --timeout=240s
 kubectl wait -n sonarqube --for=condition=ready pod --selector=release=sonarqube --selector=app=sonarqube --selector=role=web --timeout=240s
+kubectl wait -n sonarqube --for=condition=complete job/sonarqube-init --timeout=300s

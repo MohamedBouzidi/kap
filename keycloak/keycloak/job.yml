@@ -25,7 +25,7 @@ spec:
         args:
           - |
             until curl --connect-timeout 100 "keycloak:8080/health" | grep -q -e '"status": "UP"'; do sleep 10; done
-      - name: keycloak-update-master-realm
+      - name: keycloak-setup-realms
         image: quay.io/keycloak/keycloak:21.1.1
         command: ["sh", "-c"]
         args:
@@ -33,9 +33,84 @@ spec:
             alias kcadm=/opt/keycloak/bin/kcadm.sh
             kcadm config credentials --server http://keycloak:8080 --realm master --user $KEYCLOAK_ADMIN --password $KEYCLOAK_ADMIN_PASSWORD
             MASTER_REALM_CLIENT_ID=$(kcadm get clients --query clientId="master-realm" --fields id | sed -nE 's/.*"id" "?([^,"]*)"?.*/\1/p' | tr -d '\n')
-            kcadm update client/$MASTER_REALM_CLIENT_ID --set 'webOrigins=["https://keycloak.dev.local:9443"]' --set 'redirectUris=["*"]'
+            kcadm update client/$MASTER_REALM_CLIENT_ID --set 'webOrigins=["https://keycloak.dev.local"]' --set 'redirectUris=["*"]'
             ADMIN_CONSOLE_CLIENT_ID=$(kcadm get clients --query clientId="security-admin-console" --fields id | sed -nE 's/.*"id" : "?([^,"]*)"?.*/\1/p' | tr -d '\n')
-            kcadm update clients/$ADMIN_CONSOLE_CLIENT_ID --set 'webOrigins=["https://keycloak.dev.local:9443"]' --set 'redirectUris=["*"]'
+            kcadm update clients/$ADMIN_CONSOLE_CLIENT_ID --set 'webOrigins=["https://keycloak.dev.local"]' --set 'redirectUris=["*"]'
+
+            kcadm create realms --set 'realm=kap' --set 'enabled=true'
+            kcadm create users -r kap --set 'username=admin' --set 'enabled=true'
+            echo admin | kcadm set-password -r kap --username admin --password
+        envFrom:
+        - secretRef:
+            name: keycloak-admin-user
+        - configMapRef:
+            name: keycloak-config
+      - name: keycloak-setup-gitlab-client
+        image: quay.io/keycloak/keycloak:21.1.1
+        command: ["sh", "-c"]
+        args:
+          - |
+            alias kcadm=/opt/keycloak/bin/kcadm.sh
+            kcadm config credentials --server http://keycloak:8080 --realm master --user $KEYCLOAK_ADMIN --password $KEYCLOAK_ADMIN_PASSWORD
+
+            GITLAB_HOST="gitlab.dev.local"
+            GITLAB_CALLBACK_PATH="users/auth/saml/callback"
+
+            kcadm create clients -r kap --set 'clientId=gitlab' --set 'enabled=true' --set "protocol=saml" --set 'directAccessGrantsEnabled=true' --set 'publicClient=true'
+            KAP_GITLAB_CLIENT_ID=$(kcadm get clients -r kap --query clientId="gitlab" --fields id | sed -nE 's/.*"id" : "?([^,"]*)"?.*/\1/p' | tr -d '\n')
+            kcadm create clients/$KAP_GITLAB_CLIENT_ID/roles -r kap --set 'name="gitlab:external"' --set 'description="GitLab SAML Login"'
+            kcadm update clients/$KAP_GITLAB_CLIENT_ID -r kap --set "rootUrl=\"https://${GITLAB_HOST}\"" --set "adminUrl=\"https://${GITLAB_HOST}/${GITLAB_CALLBACK_PATH}\"" \
+              --set "redirectUris=[\"https://${GITLAB_HOST}/${GITLAB_CALLBACK_PATH}\"]" --set 'attributes.saml_idp_initiated_sso_url_name="gitlab"' \
+              --set "attributes.saml_assertion_consumer_url_post=\"https://${GITLAB_HOST}/${GITLAB_CALLBACK_PATH}\""
+            kcadm create clients/$KAP_GITLAB_CLIENT_ID/protocol-mappers/models -r kap \
+              --set 'name=email' --set 'protocol=saml' --set 'protocolMapper=saml-user-property-mapper' \
+              --set 'config."user.attribute"=Email' --set 'config."friendly.name"=Email' --set 'config."attribute.name"=email'
+            kcadm create clients/$KAP_GITLAB_CLIENT_ID/protocol-mappers/models -r kap \
+              --set 'name=first_name' --set 'protocol=saml' --set 'protocolMapper=saml-user-property-mapper' \
+              --set 'config."user.attribute"=FirstName' --set 'config."friendly.name"=FirstName' --set 'config."attribute.name"=first_name'
+            kcadm create clients/$KAP_GITLAB_CLIENT_ID/protocol-mappers/models -r kap \
+              --set 'name=last_name' --set 'protocol=saml' --set 'protocolMapper=saml-user-property-mapper' \
+              --set 'config."user.attribute"=LastName' --set 'config."friendly.name"=LastName' --set 'config."attribute.name"=last_name'
+            kcadm create clients/$KAP_GITLAB_CLIENT_ID/protocol-mappers/models -r kap \
+              --set 'name=roles' --set 'protocol=saml' --set 'protocolMapper=saml-role-list-mapper' \
+              --set 'config.single=true' --set 'config."friendly.name"=Roles' --set 'config."attribute.name"=roles'
+        resources:
+          requests:
+            cpu: 50m
+            memory: 50Mi
+          limits:
+            cpu: 100m
+            memory: 100Mi
+        envFrom:
+        - secretRef:
+            name: keycloak-admin-user
+        - configMapRef:
+            name: keycloak-config
+      - name: keycloak-setup-argocd-client
+        image: quay.io/keycloak/keycloak:21.1.1
+        command: ["sh", "-c"]
+        args:
+          - |
+            alias kcadm=/opt/keycloak/bin/kcadm.sh
+            kcadm config credentials --server http://keycloak:8080 --realm master --user $KEYCLOAK_ADMIN --password $KEYCLOAK_ADMIN_PASSWORD
+
+            ARGOCD_HOST="argocd.dev.local"
+            ARGOCD_CALLBACK_PATH="auth/callback"
+
+            kcadm create clients -r kap --set 'clientId=argocd' --set 'enabled=true' --set 'protocol="openid-connect"' --set 'directAccessGrantsEnabled=true' --set 'publicClient=false'
+            KAP_ARGOCD_CLIENT_ID=$(kcadm get clients -r kap --query clientId="argocd" --fields id | sed -nE 's/.*"id" : "?([^,"]*)"?.*/\1/p' | tr -d '\n')
+            kcadm update clients/$KAP_ARGOCD_CLIENT_ID -r kap --set "rootUrl=\"https://${ARGOCD_HOST}\"" --set "adminUrl=\"https://${ARGOCD_HOST}/${ARGOCD_CALLBACK_PATH}\"" \
+              --set "redirectUris=[\"https://${ARGOCD_HOST}/${ARGOCD_CALLBACK_PATH}\"]" --set 'baseUrl="/applications"'
+            kcadm create client-scopes -r kap --set 'name=groups' --set 'protocol="openid-connect"' --set 'attributes."include.in.token.scope"=true' \
+              --set 'attributes."display.on.consent.screen"=true' --set 'description="ArgoCD groups scope"'
+            kcadm update clients/$KAP_ARGOCD_CLIENT_ID -r kap --set 'defaultClientScopes+="groups"'
+        resources:
+          requests:
+            cpu: 50m
+            memory: 50Mi
+          limits:
+            cpu: 100m
+            memory: 100Mi
         envFrom:
         - secretRef:
             name: keycloak-admin-user

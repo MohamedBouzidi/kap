@@ -4,7 +4,6 @@ namespace: gitlab
 commonLabels:
   app.kubernetes.io/name: gitlab
   app.kubernetes.io/part-of: gitlab
-  role: 
 resources:
 - gitaly
 - gitlab-exporter
@@ -13,4 +12,3 @@ resources:
 - migrations
 - sidekiq
 - toolbox
-- webservice

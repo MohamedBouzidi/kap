@@ -81,9 +81,9 @@ TEMPLATES_DIR=$SCRIPT_DIR/templates
 HELPERS_DIR=$SCRIPT_DIR/helpers
 PROJECTS_DIR=$TEMPLATES_DIR/projects
 MANIFESTS_DIR=$TEMPLATES_DIR/manifests
-GITLAB_HOST="gitlab.dev.local:9443"
-SONARQUBE_HOST="sonarqube.dev.local:9443"
-ARGOCD_HOST="argocd.dev.local:9443"
+GITLAB_HOST="gitlab.dev.local"
+SONARQUBE_HOST="sonarqube.dev.local"
+ARGOCD_HOST="argocd.dev.local"
 ARGO_PATH="cd"
 
 case "$SUBCOMMAND" in

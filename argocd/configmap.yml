@@ -8,7 +8,14 @@ metadata:
   name: argocd-cm
   namespace: argocd
 data:
-  statusbadge.enabled: "true"
+  statusbadge.enabled: 'true'
+  url: https://argocd.dev.local
+  oidc.config: |
+    name: Keycloak
+    issuer: https://keycloak.dev.local/realms/kap
+    clientID: argocd
+    clientSecret: $oidc.keycloak.clientSecret
+    requestedScopes: ["openid", "profile", "email", "groups"]
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -42,6 +49,9 @@ metadata:
     app.kubernetes.io/part-of: argocd
   name: argocd-rbac-cm
   namespace: argocd
+data:
+  policy.csv: |
+    g, ArgoCDAdmins, role:admin
 ---
 apiVersion: v1
 data:

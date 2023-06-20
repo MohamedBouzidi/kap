@@ -5,11 +5,24 @@ metadata:
   namespace: keycloak
 data:
   KC_PROXY: "edge"
-  KC_HOSTNAME: "keycloak.dev.local:9443"
-  KC_HOSTNAME_ADMIN: "keycloak.dev.local:9443"
+  KC_HOSTNAME: "keycloak.dev.local"
+  KC_HOSTNAME_ADMIN: "keycloak.dev.local"
   # KC_HOSTNAME_PORT: "9443"
   KC_METRICS_ENABLED: "true"
   KC_HEALTH_ENABLED: "true"
   KC_DB: "postgres"
   KC_DB_URL: "jdbc:postgresql://keycloak-postgresql.keycloak.svc:5432/keycloak"
   KEYCLOAK_POSTGRESQL_HOST: "keycloak-postgresql.keycloak.svc"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: keycloak-helper-scripts
+  namespace: keycloak
+data:
+  get-argocd-client-secret.sh: |
+    shopt -s expand_aliases
+    alias kcadm=/opt/keycloak/bin/kcadm.sh
+    kcadm config credentials --server http://keycloak:8080 --realm master --user $KEYCLOAK_ADMIN --password $KEYCLOAK_ADMIN_PASSWORD > /dev/null 2>&1
+    KAP_ARGOCD_CLIENT_ID=$(kcadm get clients -r kap --query clientId="argocd" --fields id | sed -nE 's/.*"id" : "?([^,"]*)"?.*/\1/p' | tr -d '\n')
+    kcadm get clients/$KAP_ARGOCD_CLIENT_ID -r kap | sed -nE 's/.*"secret" : "?([^,"]*)"?.*/\1/p' | tr -d '\n'

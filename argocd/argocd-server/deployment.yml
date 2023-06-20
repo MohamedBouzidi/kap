@@ -31,9 +31,42 @@ spec:
                   app.kubernetes.io/part-of: argocd
               topologyKey: kubernetes.io/hostname
             weight: 5
+      initContainers:
+      - name: certificates
+        image: quay.io/argoproj/argocd:v2.5.4
+        command: ["sh", "-c"]
+        args:
+          - |
+            echo Adding Keycloak CA to ca-certificates...
+            cat /usr/share/ca-certificates/keycloak-ca.crt >> /etc/ssl/cert.pem
+            cat /usr/share/ca-certificates/keycloak-ca.crt >> /etc/ssl/certs/ca-certificates.crt
+            echo Updating ca-certificates
+            update-ca-certificates
+            echo Copying /etc/ssl/certs...
+            cp -r /etc/ssl/* /tmp/ssl/
+        securityContext:
+          runAsUser: 0
+          allowPrivilegeEscalation: true
+        volumeMounts:
+        - name: etc-ssl-certs
+          mountPath: /tmp/ssl
+          readOnly: false
+        - name: custom-ca-certificates
+          mountPath: /usr/share/ca-certificates
+          readOnly: true
+        resources:
+          requests:
+            cpu: 50m
       containers:
       - command:
         - argocd-server
+        resources:
+          requests:
+            cpu: 250m
+            memory: 250Mi
+          limits:
+            cpu: 500m
+            memory: 500Mi
         env:
         - name: ARGOCD_SERVER_INSECURE
           valueFrom:
@@ -261,6 +294,9 @@ spec:
           name: plugins-home
         - mountPath: /tmp
           name: tmp
+        - name: etc-ssl-certs
+          mountPath: /etc/ssl/
+          readOnly: true
       serviceAccountName: argocd-server
       volumes:
       - emptyDir: {}
@@ -293,3 +329,15 @@ spec:
             path: ca.crt
           optional: true
           secretName: argocd-dex-server-tls
+      - name: etc-ssl-certs
+        emptyDir:
+          medium: "Memory"
+      - name: custom-ca-certificates
+        projected:
+          defaultMode: 0440
+          sources:
+          - secret:
+              name: keycloak-ca-secret
+              items:
+              - key: keycloak-ca.crt
+                path: keycloak-ca.crt

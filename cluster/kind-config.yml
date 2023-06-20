@@ -14,16 +14,16 @@ nodes:
         node-labels: "ingress-ready=true"
   extraPortMappings:
   - containerPort: 80   # NGINX Ingress HTTP
-    hostPort: 9080
+    hostPort: 80
     protocol: TCP
   - containerPort: 443  # NGINX Ingress HTTP
-    hostPort: 9443
+    hostPort: 443
     protocol: TCP
   - containerPort: 30443 # Traefik websecure
     hostPort: 8443
     protocol: TCP
   - containerPort: 6443 # Kubernetes svc
-    hostPort: 39673
+    hostPort: 9443
     protocol: TCP
 - role: worker
   image: kindest/node:v1.26.3@sha256:61b92f38dff6ccc29969e7aa154d34e38b89443af1a2c14e6cfbd2df6419c66f
@@ -45,3 +45,5 @@ kubeadmConfigPatches:
     apiServer:
       certSANs:
       - "host.docker.internal"
+      - "127.0.0.1"
+      - "${KIND_IP}"
