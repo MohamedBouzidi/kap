@@ -3,6 +3,8 @@
 ## Introduction
 This project creates an application deployment platform with a development workflow on top of a Kubernetes cluster.
 
+![overview](img/overview.png "Overview")
+
 ## How to (un)install
 The Kubernetes environment is provided by [kind](https://kind.sigs.k8s.io/) at the moment.
 
@@ -46,3 +48,5 @@ $ bash scripts/kapcli.sh create_app --project-name my-project --app-name my-app 
 | [Prometheus](https://prometheus.io/) | Metrics aggregation |
 | [Grafana](https://grafana.com/) | Metrics dashboard |
 | [GitLab](https://about.gitlab.com/) | Source and CI management |
+| [SonarQube](https://www.sonarsource.com/products/sonarqube/) | Code analysis |
+| [Keycloak](https://www.keycloak.org/) | Single sign-on |
