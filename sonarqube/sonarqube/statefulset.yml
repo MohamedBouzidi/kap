@@ -129,10 +129,6 @@ spec:
               cpu: 500m
               memory: 2Gi
           env:
-            - name: SONAR_WEB_JAVAOPTS
-              value: -javaagent:/opt/sonarqube/data/jmx_prometheus_javaagent.jar=8000:/opt/sonarqube/conf/prometheus-config.yaml -Djavax.net.ssl.trustStore=/opt/sonarqube/certs/cacerts
-            - name: SONAR_CE_JAVAOPTS
-              value:
             - name: SONAR_JDBC_PASSWORD
               valueFrom:
                 secretKeyRef:

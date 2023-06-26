@@ -38,7 +38,7 @@ spec:
             kcadm update clients/$ADMIN_CONSOLE_CLIENT_ID --set 'webOrigins=["https://keycloak.dev.local"]' --set 'redirectUris=["*"]'
 
             kcadm create realms --set 'realm=kap' --set 'enabled=true'
-            kcadm create users -r kap --set 'username=admin' --set 'enabled=true'
+            kcadm create users -r kap --set 'username=admin' --set 'enabled=true' --set 'email="admin@kap.dev.local"'
             echo admin | kcadm set-password -r kap --username admin --password
         envFrom:
         - secretRef:
@@ -104,6 +104,46 @@ spec:
             kcadm create client-scopes -r kap --set 'name=groups' --set 'protocol="openid-connect"' --set 'attributes."include.in.token.scope"=true' \
               --set 'attributes."display.on.consent.screen"=true' --set 'description="ArgoCD groups scope"'
             kcadm update clients/$KAP_ARGOCD_CLIENT_ID -r kap --set 'defaultClientScopes+="groups"'
+        resources:
+          requests:
+            cpu: 50m
+            memory: 50Mi
+          limits:
+            cpu: 100m
+            memory: 100Mi
+        envFrom:
+        - secretRef:
+            name: keycloak-admin-user
+        - configMapRef:
+            name: keycloak-config
+      - name: keycloak-setup-sonarqube-client
+        image: quay.io/keycloak/keycloak:21.1.1
+        command: ["sh", "-c"]
+        args:
+          - |
+            alias kcadm=/opt/keycloak/bin/kcadm.sh
+            kcadm config credentials --server http://keycloak:8080 --realm master --user $KEYCLOAK_ADMIN --password $KEYCLOAK_ADMIN_PASSWORD
+
+            SONARQUBE_HOST="sonarqube.dev.local"
+            SONARQUBE_CALLBACK_PATH="oauth2/callback/saml"
+
+            kcadm create clients -r kap --set 'clientId=sonarqube' --set 'enabled=true' --set "protocol=saml" --set 'directAccessGrantsEnabled=true' --set 'publicClient=true'
+            KAP_SONARQUBE_CLIENT_ID=$(kcadm get clients -r kap --query clientId="sonarqube" --fields id | sed -nE 's/.*"id" : "?([^,"]*)"?.*/\1/p' | tr -d '\n')
+            kcadm update clients/$KAP_SONARQUBE_CLIENT_ID -r kap --set "rootUrl=\"https://${SONARQUBE_HOST}\"" --set "adminUrl=\"https://${SONARQUBE_HOST}/${SONARQUBE_CALLBACK_PATH}\"" \
+              --set "redirectUris=[\"https://${SONARQUBE_HOST}/${SONARQUBE_CALLBACK_PATH}\"]" --set 'attributes.saml_idp_initiated_sso_url_name="sonarqube"' \
+              --set "attributes.saml_assertion_consumer_url_post=\"https://${SONARQUBE_HOST}/${SONARQUBE_CALLBACK_PATH}\""
+            kcadm create clients/$KAP_SONARQUBE_CLIENT_ID/protocol-mappers/models -r kap \
+              --set 'name=Name' --set 'protocol=saml' --set 'protocolMapper=saml-user-property-mapper' \
+              --set 'config."user.attribute"=Username' --set 'config."friendly.name"=Username' --set 'config."attribute.name"=name'
+            kcadm create clients/$KAP_SONARQUBE_CLIENT_ID/protocol-mappers/models -r kap \
+              --set 'name=Email' --set 'protocol=saml' --set 'protocolMapper=saml-user-property-mapper' \
+              --set 'config."user.attribute"=Email' --set 'config."friendly.name"=Email' --set 'config."attribute.name"=email'
+            kcadm create clients/$KAP_SONARQUBE_CLIENT_ID/protocol-mappers/models -r kap \
+              --set 'name=Login' --set 'protocol=saml' --set 'protocolMapper=saml-user-property-mapper' \
+              --set 'config."user.attribute"=Username' --set 'config."friendly.name"=Login' --set 'config."attribute.name"=login'
+            kcadm create clients/$KAP_SONARQUBE_CLIENT_ID/protocol-mappers/models -r kap \
+              --set 'name=Groups' --set 'protocol=saml' --set 'protocolMapper=saml-role-list-mapper' \
+              --set 'config.single=true' --set 'config."friendly.name"=Groups' --set 'config."attribute.name"=groups'
         resources:
           requests:
             cpu: 50m

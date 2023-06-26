@@ -15,6 +15,7 @@ metadata:
   namespace: sonarqube
 data:
   SONAR_JDBC_USERNAME: sonarUser
+  SONAR_JDBC_DATABASE: sonarDB
   SONARQUBE_POSTGRESQL_HOST: sonarqube-postgresql.sonarqube.svc
   SONAR_JDBC_URL: "jdbc:postgresql://sonarqube-postgresql.sonarqube.svc:5432/sonarDB?socketTimeout=1500"
 ---

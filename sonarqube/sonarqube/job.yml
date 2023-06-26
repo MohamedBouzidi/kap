@@ -85,6 +85,64 @@ spec:
         - mountPath: /tmp/gitlab-ca.crt
           subPath: gitlab-ca.crt
           name: gitlab-ca
+      - name: get-keycloak-realm-certificate
+        image: curlimages/curl:8.1.0
+        command: ["sh", "-c"]
+        args:
+          - |
+            curl -s "keycloak.keycloak.svc:8080/realms/kap/protocol/saml/descriptor" | sed -nE 's/.*<ds:X509Certificate>(.*)<\/ds:X509Certificate>.*/\1/p' | tr -d '\n' > /tmp/keycloak/kap.crt
+        volumeMounts:
+        - name: keycloak-realm-certificate
+          mountPath: /tmp/keycloak
+      - name: add-saml-config-to-db
+        image: docker.io/bitnami/postgresql:12.7.0
+        command: ["sh", "-c"]
+        args:
+          - |
+            KEYCLOAK_REALM_CERTIFICATE=$(cat /tmp/keycloak/kap.crt)
+            CREATED_AT=$(date +%s%N | cut -b1-13)
+            INSERT_SQL="
+              INSERT INTO
+                properties (uuid, prop_key, created_at, is_empty, text_value)
+              VALUES
+                ('"$(cat /proc/sys/kernel/random/uuid)"', 'sonar.core.serverBaseURL',             $CREATED_AT, false, 'https://sonarqube.dev.local'),
+                ('"$(cat /proc/sys/kernel/random/uuid)"', 'sonar.auth.saml.enabled',              $CREATED_AT, false, 'true'),
+                ('"$(cat /proc/sys/kernel/random/uuid)"', 'sonar.auth.saml.applicationId',        $CREATED_AT, false, 'sonarqube'),
+                ('"$(cat /proc/sys/kernel/random/uuid)"', 'sonar.auth.saml.providerName',         $CREATED_AT, false, 'SAML'),
+                ('"$(cat /proc/sys/kernel/random/uuid)"', 'sonar.auth.saml.providerId',           $CREATED_AT, false, 'https://keycloak.dev.local/realms/kap'),
+                ('"$(cat /proc/sys/kernel/random/uuid)"', 'sonar.auth.saml.loginUrl',             $CREATED_AT, false, 'https://keycloak.dev.local/realms/kap/protocol/saml/clients/sonarqube'),
+                ('"$(cat /proc/sys/kernel/random/uuid)"', 'sonar.auth.saml.user.login',           $CREATED_AT, false, 'login'),
+                ('"$(cat /proc/sys/kernel/random/uuid)"', 'sonar.auth.saml.user.name',            $CREATED_AT, false, 'name'),
+                ('"$(cat /proc/sys/kernel/random/uuid)"', 'sonar.auth.saml.user.email',           $CREATED_AT, false, 'email'),
+                ('"$(cat /proc/sys/kernel/random/uuid)"', 'sonar.auth.saml.group.name',           $CREATED_AT, false, 'groups'),
+                ('"$(cat /proc/sys/kernel/random/uuid)"', 'sonar.auth.saml.certificate.secured',  $CREATED_AT, false, '"${KEYCLOAK_REALM_CERTIFICATE}"'),
+                ('"$(cat /proc/sys/kernel/random/uuid)"', 'sonar.auth.saml.signature.enabled',    $CREATED_AT, false, 'false');
+            "
+            psql -c "$INSERT_SQL"
+        env:
+        - name: PGHOST
+          valueFrom:
+            configMapKeyRef:
+              name: sonarqube-database-config
+              key: SONARQUBE_POSTGRESQL_HOST
+        - name: PGUSER
+          valueFrom:
+            configMapKeyRef:
+              name: sonarqube-database-config
+              key: SONAR_JDBC_USERNAME
+        - name: PGDATABASE
+          valueFrom:
+            configMapKeyRef:
+              name: sonarqube-database-config
+              key: SONAR_JDBC_DATABASE
+        - name: PGPASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: sonarqube-database
+              key: jdbc-password
+        volumeMounts:
+        - name: keycloak-realm-certificate
+          mountPath: /tmp/keycloak
       containers:
       - name: finish
         image: busybox:1.32
@@ -96,3 +154,7 @@ spec:
           items:
           - key: gitlab-dev-local
             path: gitlab-ca.crt
+      - name: keycloak-realm-certificate
+        emptyDir:
+          medium: Memory
+          sizeLimit: 10Mi
