@@ -1,0 +1,4 @@
+libvirt_connection_uri = "qemu+ssh://<user>:<password>@<linux_host>/system?sshauth=ssh-password"
+kvm_host = <host>
+kvm_sudo_user = <username>
+kvm_sudo_password = <password>
