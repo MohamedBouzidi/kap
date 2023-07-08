@@ -8,4 +8,4 @@ kubectl wait -n jaeger --for=condition=ready pod --selector=app.kubernetes.io/na
 bash $SCRIPT_DIR/create_secrets.sh
 
 kubectl create -f $SCRIPT_DIR/../instance
-kubectl wait -n jaeger --for=condition=ready pod --selector=app=jaeger-kap --timeout=240s
+kubectl wait -n jaeger --for=condition=ready pod --selector=app.kubernetes.io/instance=jaeger-kap --timeout=240s

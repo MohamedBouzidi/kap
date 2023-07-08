@@ -2,7 +2,7 @@
 
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
-bash $SCRIPT_DIR/../cluster/create_cluster.sh
+bash $SCRIPT_DIR/../cluster/kind/create_cluster.sh
 
 kubectl create -k $SCRIPT_DIR/../cert-manager
 kubectl wait -n cert-manager --for=condition=ready pod --selector=app.kubernetes.io/instance=cert-manager --timeout=120s
@@ -22,7 +22,7 @@ bash $SCRIPT_DIR/../external-dns/install.sh
 bash $SCRIPT_DIR/../vault/scripts/install_vault.sh
 
 bash $SCRIPT_DIR/../monitoring/install.sh
-kubectl apply -f $SCRIPT_DIR/../dashboard/recommended.yaml
+# kubectl apply -f $SCRIPT_DIR/../dashboard/recommended.yaml
 
 kubectl create -k $SCRIPT_DIR/../traefik-ingress
 kubectl wait -n traefik --for=condition=ready pod --selector=app.kubernetes.io/name=traefik-ingress-controller --timeout=300s

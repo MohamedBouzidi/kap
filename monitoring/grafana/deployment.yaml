@@ -43,6 +43,13 @@ spec:
         - name: grafana
           image: "grafana/grafana:9.3.1"
           imagePullPolicy: IfNotPresent
+          resources:
+            requests:
+              cpu: 150m
+              memory: 150Mi
+            limits:
+              cpu: 250m
+              memory: 250Mi
           volumeMounts:
             - name: config
               mountPath: "/etc/grafana/grafana.ini"
@@ -62,6 +69,8 @@ spec:
               mountPath: "/var/lib/grafana/dashboards/jenkins"
             - name: sonarqube-dashboards
               mountPath: "/var/lib/grafana/dashboards/sonarqube"
+            - name: istio-dashboards
+              mountPath: "/var/lib/grafana/dashboards/istio"
             - name: storage
               mountPath: "/var/lib/grafana"
           ports:
@@ -114,5 +123,8 @@ spec:
         - name: sonarqube-dashboards
           configMap:
             name: grafana-sonarqube-dashboards
+        - name: istio-dashboards
+          configMap:
+            name: grafana-istio-dashboards
         - name: storage
           emptyDir: {}

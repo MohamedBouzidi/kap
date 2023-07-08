@@ -1,0 +1,18 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+commonLabels:
+  app.kubernetes.io/name: istio
+  app.kubernetes.io/part-of: istio
+resources:
+- namespace.yml
+- crds/
+- rbac/
+- configmap.yml
+- deployment.yml
+- service.yml
+- webhook.yml
+- horizontalpodautoscaler.yml
+- poddisruptionbudget.yml
+- envoyfilter.yml
+- dashboard.yml
+- ingress.yml

@@ -5,10 +5,12 @@
 			"extensions": [
 				"ms-azuretools.vscode-docker",
 				"ms-kubernetes-tools.vscode-kubernetes-tools",
-				"redhat.vscode-yaml"
+				"redhat.vscode-yaml",
+				"hashicorp.terraform"
 			]
 		}
-	}
+	},
+	"runArgs": ["--cap-add=NET_ADMIN"]
     // "build": {
     //     // Path is relataive to the devcontainer.json file.
     //     "dockerfile": "Dockerfile"

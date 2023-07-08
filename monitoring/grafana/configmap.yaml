@@ -70,3 +70,11 @@ data:
         path: /var/lib/grafana/dashboards/sonarqube
       orgId: 1
       type: file
+    - disableDeletion: false
+      editable: false
+      folder: Istio
+      name: istio
+      options:
+        path: /var/lib/grafana/dashboards/istio
+      orgId: 1
+      type: file
