@@ -4,6 +4,7 @@ SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
 kubectl delete namespace --selector kap-app=client
 
+kubectl delete -k $SCRIPT_DIR/../keycloak
 kubectl delete -k $SCRIPT_DIR/../gitlab/gitlab-runner
 kubectl delete -k $SCRIPT_DIR/../gitlab/gitlab
 kubectl delete -k $SCRIPT_DIR/../gitlab/registry
